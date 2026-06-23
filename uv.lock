@@ -6,9 +6,6 @@ resolution-markers = [
     "python_full_version < '3.15'",
 ]
 
-[manifest]
-overrides = [{ name = "docstring-parser", marker = "sys_platform == 'no-such-platform'" }]
-
 [[package]]
 name = "annotated-doc"
 version = "0.0.4"
@@ -515,7 +512,7 @@ name = "vgi-rpc"
 version = "0.20.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "docstring-parser", marker = "sys_platform == 'no-such-platform'" },
+    { name = "docstring-parser" },
     { name = "pyarrow" },
     { name = "pywin32", marker = "sys_platform == 'win32'" },
     { name = "tzdata", marker = "sys_platform == 'win32'" },
@@ -530,7 +527,6 @@ name = "vgi-search"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "docstring-parser-fork" },
     { name = "httpx" },
     { name = "pyarrow" },
     { name = "vgi-python" },
@@ -546,7 +542,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "docstring-parser-fork", specifier = ">=0.0.12" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.10" },
     { name = "pyarrow" },
