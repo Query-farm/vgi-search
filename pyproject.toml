@@ -95,3 +95,12 @@ python_version = "3.13"
 strict = true
 warn_return_any = true
 warn_unused_ignores = true
+
+[tool.uv]
+# vgi-rpc pulls the upstream `docstring-parser`, while pydoclint needs
+# `docstring-parser-fork`; both ship the same `docstring_parser` import name, so
+# whichever installs last wins (non-deterministic across platforms/CI). The fork
+# is a strict superset (it provides DocstringStyle/parse that vgi-rpc uses), so
+# override the upstream requirement onto the fork to keep a single, correct
+# provider of the import name.
+override-dependencies = ["docstring-parser ; sys_platform == 'no-such-platform'"]
