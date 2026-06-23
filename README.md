@@ -4,7 +4,9 @@
 
 <p align="center"><em>A <a href="https://query.farm">Query.Farm</a> VGI worker for DuckDB.</em></p>
 
-# vgi-search
+# Unified Web Search (Brave, Tavily, Exa, DDG, SearXNG) in DuckDB
+
+> **vgi-search** · a [Query.Farm](https://query.farm) VGI worker
 
 Unified **web search** as DuckDB SQL functions — for retrieval-augmented
 generation (RAG) and ad-hoc lookups — behind **one pluggable provider surface**.
