@@ -1,0 +1,18 @@
+{
+  "organic": [
+    {
+      "title": "DuckDB",
+      "link": "https://duckdb.org",
+      "snippet": "Fast in-process analytical database.",
+      "position": 1,
+      "date": "Mar 1, 2024"
+    },
+    {
+      "title": "DuckDB Docs",
+      "link": "https://duckdb.org/docs",
+      "snippet": "Documentation for DuckDB.",
+      "position": 2,
+      "sitelinks": [{"title": "SQL", "link": "https://duckdb.org/docs/sql"}]
+    }
+  ]
+}

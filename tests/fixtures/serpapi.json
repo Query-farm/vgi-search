@@ -1,0 +1,18 @@
+{
+  "organic_results": [
+    {
+      "position": 1,
+      "title": "DuckDB Official Site",
+      "link": "https://duckdb.org",
+      "displayed_link": "https://duckdb.org",
+      "snippet": "DuckDB is an in-process SQL OLAP database management system.",
+      "source": "DuckDB"
+    },
+    {
+      "position": 2,
+      "title": "DuckDB on Wikipedia",
+      "link": "https://en.wikipedia.org/wiki/DuckDB",
+      "snippet": "DuckDB is an open-source column-oriented RDBMS."
+    }
+  ]
+}

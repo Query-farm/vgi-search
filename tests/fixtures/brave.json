@@ -1,0 +1,23 @@
+{
+  "type": "search",
+  "web": {
+    "type": "search",
+    "results": [
+      {
+        "title": "DuckDB Arrow Protocol",
+        "url": "https://duckdb.org/docs/arrow",
+        "description": "How DuckDB exchanges data using the Apache Arrow protocol.",
+        "page_age": "2024-11-02T10:00:00Z",
+        "language": "en",
+        "family_friendly": true,
+        "profile": { "name": "DuckDB" },
+        "meta_url": { "hostname": "duckdb.org" }
+      },
+      {
+        "title": "Arrow flight and DuckDB",
+        "url": "https://example.com/arrow-flight",
+        "description": "Streaming Arrow data into DuckDB."
+      }
+    ]
+  }
+}

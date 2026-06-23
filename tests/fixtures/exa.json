@@ -1,0 +1,20 @@
+{
+  "results": [
+    {
+      "title": "Neural search for AI",
+      "url": "https://exa.ai/blog/neural-search",
+      "publishedDate": "2024-06-01T00:00:00.000Z",
+      "author": "Exa Team",
+      "id": "abc123",
+      "score": 0.42,
+      "highlights": ["neural search ranks by meaning", "embeddings over keywords"],
+      "text": "A long article body about neural web search that would be truncated to a snippet."
+    },
+    {
+      "title": "Embeddings retrieval",
+      "url": "https://example.com/embeddings",
+      "score": 0.31,
+      "text": "Plain text only, no highlights here."
+    }
+  ]
+}

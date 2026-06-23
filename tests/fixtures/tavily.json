@@ -1,0 +1,20 @@
+{
+  "query": "who maintains duckdb",
+  "answer": "DuckDB is maintained by DuckDB Labs and the DuckDB Foundation.",
+  "results": [
+    {
+      "title": "DuckDB Labs",
+      "url": "https://duckdblabs.com",
+      "content": "DuckDB Labs is the company behind DuckDB.",
+      "score": 0.97231,
+      "published_date": "2024-03-15",
+      "raw_content": "DuckDB Labs full page text ..."
+    },
+    {
+      "title": "DuckDB Foundation",
+      "url": "https://duckdb.org/foundation",
+      "content": "The non-profit that holds the DuckDB IP.",
+      "score": 0.8112
+    }
+  ]
+}

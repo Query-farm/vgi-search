@@ -1,0 +1,47 @@
+# name: test/sql/providers.test
+# description: search_providers() discovery table function
+# group: [vgi_search]
+
+require-env VGI_SEARCH_WORKER
+
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'search' AS search (TYPE vgi, LOCATION '${VGI_SEARCH_WORKER}');
+
+# Output schema is exactly (provider, requires_key, supports_answer, configured).
+query I
+SELECT count(*) FROM (DESCRIBE SELECT * FROM search.search_providers());
+----
+4
+
+query I
+SELECT column_name FROM (DESCRIBE SELECT * FROM search.search_providers());
+----
+provider
+requires_key
+supports_answer
+configured
+
+# The five v1 providers are listed (serpapi/serper are flagged off by default).
+query I
+SELECT count(*) >= 5 FROM search.search_providers();
+----
+true
+
+# ddg needs no key and exposes an answer.
+query II
+SELECT requires_key, supports_answer FROM search.search_providers() WHERE provider = 'ddg';
+----
+false	true
+
+# Under the mock launcher every keyed provider has a (throwaway) key, so brave
+# is configured; ddg is configured regardless (no key needed).
+query I
+SELECT bool_and(configured) FROM search.search_providers() WHERE provider IN ('brave', 'ddg', 'tavily', 'exa');
+----
+true
+
+statement ok
+DETACH search;

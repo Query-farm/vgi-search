@@ -1,0 +1,40 @@
+# name: test/sql/answer.test
+# description: web_answer scalar — synthesized answer (ddg/tavily), NULL otherwise
+# group: [vgi_search]
+#
+# web_answer is a SCALAR, so its provider is POSITIONAL (no name := value).
+
+require-env VGI_SEARCH_WORKER
+
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'search' AS search (TYPE vgi, LOCATION '${VGI_SEARCH_WORKER}');
+
+# DDG Instant Answer (free, no key) returns an abstract for the canned fixture.
+query I
+SELECT search.web_answer('python', 'ddg') LIKE 'Python is a high-level%';
+----
+true
+
+# Tavily returns its synthesized answer.
+query I
+SELECT search.web_answer('who maintains duckdb', 'tavily') LIKE 'DuckDB is maintained%';
+----
+true
+
+# A provider with no synthesized answer (brave) yields NULL, never an error.
+query I
+SELECT search.web_answer('anything', 'brave') IS NULL;
+----
+true
+
+# An unknown provider yields NULL (clean degradation, no crash).
+query I
+SELECT search.web_answer('anything', 'no-such-provider') IS NULL;
+----
+true
+
+statement ok
+DETACH search;

@@ -1,0 +1,32 @@
+# name: test/sql/errors.test
+# description: provider-error paths surface a clean DuckDB error, never a crash
+# group: [vgi_search]
+
+require-env VGI_SEARCH_WORKER
+
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'search' AS search (TYPE vgi, LOCATION '${VGI_SEARCH_WORKER}');
+
+# An unknown provider name fails cleanly at bind (clear message), not a crash.
+statement error
+SELECT * FROM search.web_search('x', provider := 'does-not-exist');
+----
+unknown provider
+
+# A flagged Google/Bing-SERP scraper is disabled by default -> clean error.
+statement error
+SELECT * FROM search.web_search('x', provider := 'serpapi');
+----
+disabled by default
+
+# The worker is still alive after the errors: a normal query still works.
+query I
+SELECT count(*) >= 1 FROM search.web_search('duckdb', provider := 'brave', count := 3);
+----
+true
+
+statement ok
+DETACH search;

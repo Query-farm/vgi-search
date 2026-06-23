@@ -1,0 +1,27 @@
+{
+  "Heading": "Python (programming language)",
+  "AbstractText": "Python is a high-level, general-purpose programming language.",
+  "AbstractSource": "Wikipedia",
+  "AbstractURL": "https://en.wikipedia.org/wiki/Python_(programming_language)",
+  "Answer": "",
+  "AnswerType": "",
+  "Type": "A",
+  "RelatedTopics": [
+    {
+      "FirstURL": "https://duckduckgo.com/Guido_van_Rossum",
+      "Text": "Guido van Rossum - creator of Python"
+    },
+    {
+      "Name": "Implementations",
+      "Topics": [
+        {
+          "FirstURL": "https://duckduckgo.com/CPython",
+          "Text": "CPython - the reference implementation"
+        }
+      ]
+    },
+    {
+      "Text": "no url topic, should be skipped"
+    }
+  ]
+}

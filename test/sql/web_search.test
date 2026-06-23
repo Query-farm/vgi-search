@@ -1,0 +1,131 @@
+# name: test/sql/web_search.test
+# description: web_search table function — unified columns, paging, scan-state round-trip
+# group: [vgi_search]
+#
+# Driven against the mock provider server (see scripts/mock_worker.py): the real
+# worker is ATTACHed and every provider's base_url points at canned fixtures, so
+# these assertions are exact and need no keys or network.
+
+require-env VGI_SEARCH_WORKER
+
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'search' AS search (TYPE vgi, LOCATION '${VGI_SEARCH_WORKER}');
+
+# ============================================================================
+# Output schema is exactly the 8-column unified result schema.
+# ============================================================================
+
+query I
+SELECT count(*) FROM (DESCRIBE
+  SELECT * FROM search.web_search('duckdb', provider := 'brave', count := 10));
+----
+8
+
+query I
+SELECT column_name FROM (DESCRIBE
+  SELECT * FROM search.web_search('duckdb', provider := 'brave', count := 10));
+----
+title
+url
+snippet
+rank
+source
+published
+score
+extra
+
+# published is TIMESTAMPTZ; score is DOUBLE.
+query I
+SELECT column_type FROM (DESCRIBE
+  SELECT * FROM search.web_search('duckdb', provider := 'brave', count := 10))
+WHERE column_name = 'published';
+----
+TIMESTAMP WITH TIME ZONE
+
+query I
+SELECT column_type FROM (DESCRIBE
+  SELECT * FROM search.web_search('duckdb', provider := 'brave', count := 10))
+WHERE column_name = 'score';
+----
+DOUBLE
+
+# ============================================================================
+# Rows: the mock brave pager returns `count` results, ranked 1..count.
+# A count of 10 spans several 5-row emit batches, so the scan-state cursor
+# round-trips across batch boundaries — yet the ranks stay contiguous & unique.
+# ============================================================================
+
+query I
+SELECT count(*) FROM search.web_search('duckdb', provider := 'brave', count := 10);
+----
+10
+
+query I
+SELECT rank FROM search.web_search('duckdb', provider := 'brave', count := 10) ORDER BY rank;
+----
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+
+# No row dropped or duplicated across the batch boundary: distinct ranks == count.
+query I
+SELECT count(DISTINCT rank) = count(*) AND count(*) = 10
+FROM search.web_search('duckdb', provider := 'brave', count := 10);
+----
+true
+
+# Every row carries the provider name in `source`.
+query I
+SELECT bool_and(source = 'brave')
+FROM search.web_search('duckdb', provider := 'brave', count := 10);
+----
+true
+
+# ============================================================================
+# Pagination scan-state ROUND-TRIPS across a page boundary: offset selects a
+# later provider page and rank reflects the global position (base_rank = offset*count).
+# ============================================================================
+
+query I
+SELECT rank FROM search.web_search('duckdb', provider := 'brave', count := 5, page := 1) ORDER BY rank;
+----
+6
+7
+8
+9
+10
+
+# The offset page is disjoint from page 0 (urls don't overlap) — the cursor
+# really advanced rather than re-reading page 0.
+query I
+SELECT count(*) = 0 FROM (
+  SELECT url FROM search.web_search('duckdb', provider := 'brave', count := 5, page := 0)
+  INTERSECT
+  SELECT url FROM search.web_search('duckdb', provider := 'brave', count := 5, page := 1)
+);
+----
+true
+
+# ============================================================================
+# extra is VARCHAR(JSON): reachable with DuckDB JSON operators.
+# ============================================================================
+
+query I
+SELECT count(*) >= 1
+FROM search.web_search('python', provider := 'ddg', count := 10)
+WHERE extra IS NOT NULL;
+----
+true
+
+statement ok
+DETACH search;
