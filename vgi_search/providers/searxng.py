@@ -34,6 +34,7 @@ class SearxngProvider(BaseProvider):
         offset: int,
         opts: dict[str, Any],
     ) -> list[Result]:
+        """Search a self-hosted SearXNG instance, mapped to the unified schema."""
         if not self.base_url:
             raise ProviderError(
                 "provider 'searxng' requires a base_url pointing at your self-hosted "

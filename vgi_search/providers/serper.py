@@ -31,6 +31,7 @@ class SerperProvider(BaseProvider):
         offset: int,
         opts: dict[str, Any],
     ) -> list[Result]:
+        """Scrape SERP results via Serper, mapped to the unified schema."""
         body: dict[str, Any] = {
             "q": query,
             "num": max(count, 1),

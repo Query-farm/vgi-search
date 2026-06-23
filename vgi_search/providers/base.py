@@ -106,6 +106,7 @@ class BaseProvider:
         timeout: float = DEFAULT_TIMEOUT,
         client: httpx.Client | None = None,
     ) -> None:
+        """Store credentials and endpoint; an injected client enables testing."""
         self.api_key = api_key
         self.base_url = (base_url or self.default_base_url).rstrip("/")
         self.timeout = timeout
@@ -150,13 +151,9 @@ class BaseProvider:
                     last_exc = exc
                 else:
                     if resp.status_code in RETRY_STATUS and attempt < MAX_RETRIES - 1:
-                        last_exc = ProviderError(
-                            f"{self.name}: HTTP {resp.status_code}"
-                        )
+                        last_exc = ProviderError(f"{self.name}: HTTP {resp.status_code}")
                     elif resp.is_error:
-                        raise ProviderError(
-                            f"{self.name}: HTTP {resp.status_code} {resp.text[:200]!r}"
-                        )
+                        raise ProviderError(f"{self.name}: HTTP {resp.status_code} {resp.text[:200]!r}")
                     else:
                         return resp
                 # Backoff before the next attempt.

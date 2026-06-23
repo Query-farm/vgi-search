@@ -33,6 +33,8 @@ class WebAnswer(ScalarFunction):
     """``web_answer(query, provider)`` -> synthesized answer string (or NULL)."""
 
     class Meta:
+        """Function metadata."""
+
         name = "web_answer"
         description = "Synthesized one-line answer for a query (tavily/ddg); NULL when unavailable"
         categories = ["search", "web", "rag"]
@@ -55,6 +57,7 @@ class WebAnswer(ScalarFunction):
         provider: Annotated[str, ConstParam("Provider name: 'tavily' or 'ddg'.")],
         tavily_secret: Annotated[dict[str, pa.Scalar[Any]] | None, Secret("tavily")] = None,
     ) -> Annotated[pa.StringArray, Returns()]:
+        """Return a synthesized answer per query row (NULL when unavailable)."""
         # Resolve a key from the (optional) secret material; env fallback is
         # applied inside build_provider.
         secrets: dict[str, Any] = {"tavily": tavily_secret} if tavily_secret else {}

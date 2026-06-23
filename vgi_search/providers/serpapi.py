@@ -34,6 +34,7 @@ class SerpApiProvider(BaseProvider):
         offset: int,
         opts: dict[str, Any],
     ) -> list[Result]:
+        """Scrape SERP results via SerpAPI, mapped to the unified schema."""
         params: dict[str, Any] = {
             "engine": opts.get("engine", "google"),
             "q": query,

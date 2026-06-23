@@ -102,15 +102,19 @@ def build_provider(
 ) -> Provider:
     """Construct a configured provider instance by name.
 
-    Raises:
-        ProviderError: if the name is unknown or a flagged provider is requested
-            without ``VGI_SEARCH_ENABLE_SERP=1``.
+    Args:
+        name: Registered provider name (e.g. ``brave``, ``tavily``, ``ddg``).
+        api_key: Explicit API key; falls back to the provider's env var.
+        base_url: Explicit endpoint; falls back to the provider's env var.
+        client: Optional pre-built HTTP client (used by tests).
+        timeout: Optional per-request timeout override in seconds.
+
+    Returns:
+        A configured provider instance ready to ``search``/``answer``.
     """
     cls = _REGISTRY.get(name)
     if cls is None:
-        raise ProviderError(
-            f"unknown provider {name!r}; available: {', '.join(available_providers())}"
-        )
+        raise ProviderError(f"unknown provider {name!r}; available: {', '.join(available_providers())}")
     if name in _FLAGGED and not _serp_enabled():
         raise ProviderError(
             f"provider {name!r} is a Google/Bing-SERP scraping service and is disabled by "

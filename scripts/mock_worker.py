@@ -33,6 +33,7 @@ from tests.mock_server import MockServer  # noqa: E402
 
 
 def main() -> None:
+    """Start the mock server, wire provider base URLs, and run the worker."""
     server = MockServer()
     server.__enter__()  # start the threaded mock; lives as long as this process
     base = server.base

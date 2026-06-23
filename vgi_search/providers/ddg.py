@@ -41,7 +41,8 @@ class DdgProvider(BaseProvider):
             headers={"Accept": "application/json"},
         )
         # The IA endpoint serves application/x-javascript; parse leniently.
-        return resp.json()
+        payload: dict[str, Any] = resp.json()
+        return payload
 
     def search(
         self,
@@ -51,6 +52,7 @@ class DdgProvider(BaseProvider):
         offset: int,
         opts: dict[str, Any],
     ) -> list[Result]:
+        """Search DuckDuckGo Instant Answer and map to the unified schema."""
         rows = self._parse(self._fetch(query))
         page = rows[offset : offset + count]
         for i, r in enumerate(page):
@@ -58,6 +60,7 @@ class DdgProvider(BaseProvider):
         return page
 
     def answer(self, query: str, *, opts: dict[str, Any]) -> str | None:
+        """Return a synthesized answer for the query, or None when absent."""
         payload = self._fetch(query)
         return payload.get("AbstractText") or payload.get("Answer") or None
 

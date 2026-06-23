@@ -29,11 +29,11 @@ def _fixture(name: str) -> bytes:
 
 # Map (method, path) -> fixture name. Providers hit distinct paths.
 _ROUTES: dict[tuple[str, str], str] = {
-    ("GET", "/web/search"): "brave",      # brave
-    ("POST", "/search"): "tavily",         # tavily AND exa AND searxng share /search;
-    ("GET", "/search"): "searxng",         #   disambiguated by method below
-    ("GET", "/search.json"): "serpapi",    # serpapi
-    ("GET", "/"): "ddg",                   # ddg instant answer
+    ("GET", "/web/search"): "brave",  # brave
+    ("POST", "/search"): "tavily",  # tavily AND exa AND searxng share /search;
+    ("GET", "/search"): "searxng",  #   disambiguated by method below
+    ("GET", "/search.json"): "serpapi",  # serpapi
+    ("GET", "/"): "ddg",  # ddg instant answer
 }
 
 

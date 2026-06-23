@@ -37,6 +37,7 @@ class BraveProvider(BaseProvider):
         offset: int,
         opts: dict[str, Any],
     ) -> list[Result]:
+        """Search Brave and map the response to the unified result schema."""
         key = self.require_key()
         params: dict[str, Any] = {
             "q": query,

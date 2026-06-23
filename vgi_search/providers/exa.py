@@ -35,6 +35,7 @@ class ExaProvider(BaseProvider):
         offset: int,
         opts: dict[str, Any],
     ) -> list[Result]:
+        """Search Exa and map the response to the unified result schema."""
         want = min(offset + count, EXA_MAX_RESULTS)
         body: dict[str, Any] = {
             "query": query,

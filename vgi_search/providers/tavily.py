@@ -48,6 +48,7 @@ class TavilyProvider(BaseProvider):
         offset: int,
         opts: dict[str, Any],
     ) -> list[Result]:
+        """Search Tavily and map the response to the unified result schema."""
         # Tavily has no native offset; over-fetch and slice for client-side paging.
         want = min(offset + count, TAVILY_MAX_RESULTS)
         resp = self.request_with_retry(
@@ -63,6 +64,7 @@ class TavilyProvider(BaseProvider):
         return page
 
     def answer(self, query: str, *, opts: dict[str, Any]) -> str | None:
+        """Return a synthesized answer for the query, or None when absent."""
         resp = self.request_with_retry(
             "POST",
             f"{self.base_url}/search",

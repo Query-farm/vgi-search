@@ -156,6 +156,8 @@ class WebSearch(TableFunctionGenerator[WebSearchArgs, ScanState]):
     FunctionArguments: ClassVar[type] = WebSearchArgs
 
     class Meta:
+        """Function metadata."""
+
         name = "web_search"
         description = "Search the web via a pluggable provider; returns the unified result schema"
         categories = ["search", "web", "rag", "retrieval"]
@@ -176,6 +178,7 @@ class WebSearch(TableFunctionGenerator[WebSearchArgs, ScanState]):
 
     @classmethod
     def on_bind(cls, params: BindParams[WebSearchArgs]) -> BindResponse:
+        """Validate the provider and declare the fixed output schema."""
         # Validate the provider eagerly so a bad name fails at bind, cleanly.
         name = _resolve_provider_name(params.args.provider)
         try:
@@ -186,6 +189,7 @@ class WebSearch(TableFunctionGenerator[WebSearchArgs, ScanState]):
 
     @classmethod
     def initial_state(cls, params: ProcessParams[WebSearchArgs]) -> ScanState:
+        """Return a fresh scan-state cursor for a new execution."""
         return ScanState()
 
     @classmethod
@@ -198,6 +202,7 @@ class WebSearch(TableFunctionGenerator[WebSearchArgs, ScanState]):
 
     @classmethod
     def _fetch_page(cls, params: ProcessParams[WebSearchArgs]) -> list[Result]:
+        """Fetch the selected provider page, mapping failures to ProviderError."""
         a = params.args
         name = _resolve_provider_name(a.provider)
         secrets: dict[str, Any] = params.secrets or {}
@@ -218,6 +223,7 @@ class WebSearch(TableFunctionGenerator[WebSearchArgs, ScanState]):
         state: ScanState,
         out: OutputCollector,
     ) -> None:
+        """Stream the fetched page in chunks, advancing the scan-state cursor."""
         key = cls._execution_key(params)
 
         if not state.fetched:
@@ -289,6 +295,8 @@ class SearchProviders(TableFunctionGenerator[_ProvidersArgs]):
     FunctionArguments: ClassVar[type] = _ProvidersArgs
 
     class Meta:
+        """Function metadata."""
+
         name = "search_providers"
         description = "List available search providers and whether each has a key/base_url configured"
         categories = ["search", "metadata"]
@@ -302,11 +310,13 @@ class SearchProviders(TableFunctionGenerator[_ProvidersArgs]):
 
     @classmethod
     def cardinality(cls, params: BindParams[_ProvidersArgs]) -> TableCardinality:
+        """Report the exact provider count as the table cardinality."""
         n = len(provider_info())
         return TableCardinality(estimate=n, max=n)
 
     @classmethod
     def process(cls, params: ProcessParams[_ProvidersArgs], state: None, out: OutputCollector) -> None:
+        """Emit one row per provider with its configured/key/answer flags."""
         secrets: dict[str, Any] = params.secrets or {}
         keys = {p: key_from_secret(secrets, p) for p in _KEYED_PROVIDERS}
         rows = provider_info(api_keys=keys)

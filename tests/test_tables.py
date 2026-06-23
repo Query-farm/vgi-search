@@ -120,7 +120,7 @@ def test_search_providers_lists_configured(monkeypatch) -> None:
     table = run_table_function(SearchProviders)
     assert table.column_names == ["provider", "requires_key", "supports_answer", "configured"]
     rows = {r["provider"]: r for r in table.to_pylist()}
-    assert rows["ddg"]["configured"] is True          # no key needed
+    assert rows["ddg"]["configured"] is True  # no key needed
     assert rows["ddg"]["supports_answer"] is True
-    assert rows["tavily"]["configured"] is True        # key set above
-    assert rows["brave"]["configured"] is False        # key unset
+    assert rows["tavily"]["configured"] is True  # key set above
+    assert rows["brave"]["configured"] is False  # key unset
