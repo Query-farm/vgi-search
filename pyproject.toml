@@ -32,6 +32,12 @@ dependencies = [
     "vgi-python>=0.8.3",
     "httpx>=0.27",
     "pyarrow",
+    # vgi-rpc imports `docstring_parser`; pydoclint (dev) requires the fork, which
+    # ships the SAME import name. Depending on the fork directly (and excluding the
+    # upstream package via the [tool.uv] override below) makes it the single,
+    # always-installed provider of `docstring_parser` in every env -- runtime-only
+    # AND --all-extras -- so neither install order nor the dev extra can break it.
+    "docstring-parser-fork>=0.0.12",
 ]
 
 [project.optional-dependencies]
@@ -97,10 +103,9 @@ warn_return_any = true
 warn_unused_ignores = true
 
 [tool.uv]
-# vgi-rpc pulls the upstream `docstring-parser`, while pydoclint needs
-# `docstring-parser-fork`; both ship the same `docstring_parser` import name, so
-# whichever installs last wins (non-deterministic across platforms/CI). The fork
-# is a strict superset (it provides DocstringStyle/parse that vgi-rpc uses), so
-# override the upstream requirement onto the fork to keep a single, correct
-# provider of the import name.
+# Exclude the upstream `docstring-parser` (pulled transitively by vgi-rpc): it
+# collides on the `docstring_parser` import name with `docstring-parser-fork`
+# (required by pydoclint and pinned as a direct dependency above). The fork is a
+# strict superset of the symbols vgi-rpc uses, so making it the sole provider is
+# correct in every environment and removes the install-order race entirely.
 override-dependencies = ["docstring-parser ; sys_platform == 'no-such-platform'"]

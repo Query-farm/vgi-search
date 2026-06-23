@@ -530,6 +530,7 @@ name = "vgi-search"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "docstring-parser-fork" },
     { name = "httpx" },
     { name = "pyarrow" },
     { name = "vgi-python" },
@@ -545,6 +546,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "docstring-parser-fork", specifier = ">=0.0.12" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.10" },
     { name = "pyarrow" },
