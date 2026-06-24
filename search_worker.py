@@ -68,15 +68,35 @@ _CATALOG_DESCRIPTION_MD = (
 )
 
 _SCHEMA_DESCRIPTION_LLM = (
-    "Web-search functions: web_search (table function returning ranked results), web_answer "
-    "(scalar synthesized answer), and search_providers (table function listing configured "
-    "providers). Backed by pluggable providers (Brave, Tavily, Exa, SearXNG, DuckDuckGo, "
-    "opt-in SerpApi/Serper)."
+    "Web-search functions over a pluggable provider surface.\n\n"
+    "- `web_search(query, provider := ..., count := ..., page := ...)` -- table function returning "
+    "ranked results in a unified schema (title, url, snippet, rank, source, published, score, "
+    "extra JSON).\n"
+    "- `web_answer(query, provider)` -- scalar returning a synthesized one-line answer, or NULL.\n"
+    "- `search_providers()` -- table function listing the providers and which are configured.\n\n"
+    "Backed by Brave, Tavily, Exa, SearXNG, DuckDuckGo, and the opt-in SerpApi/Serper scrapers. "
+    "Provider keys come from the VGI secret provider, never from SQL; `ddg` works for free. Use "
+    "these for RAG / retrieval that needs live web results."
 )
 
 _SCHEMA_DESCRIPTION_MD = (
-    "Web-search functions over a pluggable provider surface: `web_search` (ranked results), "
-    "`web_answer` (synthesized answer), `search_providers` (provider discovery)."
+    "# search.main\n\n"
+    "Web-search functions over a **pluggable provider surface**, for RAG / retrieval.\n\n"
+    "- `web_search` -- ranked results as a table (unified schema across providers).\n"
+    "- `web_answer` -- a synthesized one-line answer (scalar), or NULL.\n"
+    "- `search_providers` -- provider discovery (names, capabilities, configured state).\n\n"
+    "Providers: Brave, Tavily, Exa, SearXNG, DuckDuckGo (free), plus opt-in SerpApi/Serper. "
+    "Keys are supplied via the VGI secret provider, never inline in SQL."
+)
+
+_SCHEMA_EXAMPLE_QUERIES = (
+    "SELECT * FROM search.main.search_providers() ORDER BY provider;\n"
+    "SELECT title, url, rank FROM "
+    "search.main.web_search('python programming language', provider := 'ddg', count := 5) "
+    "ORDER BY rank;\n"
+    "SELECT title, url, snippet FROM "
+    "search.main.web_search('vector database', provider := 'brave', count := 10);\n"
+    "SELECT search.main.web_answer('python programming language', 'ddg') AS answer;"
 )
 
 _SEARCH_CATALOG = Catalog(
@@ -85,8 +105,13 @@ _SEARCH_CATALOG = Catalog(
     comment="Unified web search over pluggable providers for SQL / RAG.",
     source_url="https://github.com/Query-farm/vgi-search",
     tags={
-        "vgi.description_llm": _CATALOG_DESCRIPTION_LLM,
-        "vgi.description_md": _CATALOG_DESCRIPTION_MD,
+        "vgi.title": "Unified Web Search",
+        "vgi.keywords": (
+            "web search, search, retrieval, rag, serp, results, brave, tavily, exa, searxng, "
+            "duckduckgo, ddg, serpapi, serper, web answer, providers"
+        ),
+        "vgi.doc_llm": _CATALOG_DESCRIPTION_LLM,
+        "vgi.doc_md": _CATALOG_DESCRIPTION_MD,
         "vgi.author": "Query.Farm",
         "vgi.copyright": "Copyright 2026 Query Farm LLC - https://query.farm",
         "vgi.license": "MIT",
@@ -98,8 +123,19 @@ _SEARCH_CATALOG = Catalog(
             name="main",
             comment="Unified web search over pluggable providers for SQL / RAG",
             tags={
-                "vgi.description_llm": _SCHEMA_DESCRIPTION_LLM,
-                "vgi.description_md": _SCHEMA_DESCRIPTION_MD,
+                "vgi.title": "Web Search — main",
+                "vgi.keywords": (
+                    "web search, web_search, web_answer, search_providers, retrieval, rag, serp, "
+                    "results, providers, brave, tavily, exa, searxng, duckduckgo, ddg"
+                ),
+                # VGI123 classifying tags (BARE keys: domain/category/topic) for faceting.
+                "domain": "information-retrieval",
+                "category": "web-search",
+                "topic": "search-providers",
+                "vgi.source_url": ("https://github.com/Query-farm/vgi-search/blob/main/search_worker.py"),
+                "vgi.doc_llm": _SCHEMA_DESCRIPTION_LLM,
+                "vgi.doc_md": _SCHEMA_DESCRIPTION_MD,
+                "vgi.example_queries": _SCHEMA_EXAMPLE_QUERIES,
             },
             functions=[*SCALAR_FUNCTIONS, *TABLE_FUNCTIONS],
         ),

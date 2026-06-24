@@ -25,8 +25,44 @@ from vgi.arguments import ConstParam, Param, Returns, Secret
 from vgi.metadata import FunctionExample
 from vgi.scalar_function import ScalarFunction
 
+from vgi_search.meta import object_tags
 from vgi_search.providers import ProviderError, build_provider
 from vgi_search.secrets import key_from_secret
+
+_WEB_ANSWER_DOC_LLM = (
+    "Return a single synthesized one-line answer for a natural-language question, as a scalar "
+    "`VARCHAR`.\n\n"
+    "`web_answer(query, provider)` asks a provider that exposes a *zero-click* / synthesized "
+    "answer -- `tavily` (with an API key) or `ddg` (DuckDuckGo Instant Answer, free, no key) -- "
+    "and returns the answer text, or `NULL` when the provider has no answer for the query, is "
+    "unknown/disabled, or has no key. It NEVER raises: a provider failure degrades to `NULL` so it "
+    "is safe to use inside a larger scan.\n\n"
+    "**Use it when** you want a quick factual snippet to ground a prompt and do not need ranked "
+    "result rows; for the full list of results use `web_search` instead.\n\n"
+    "**Inputs:** `query` (the question, one per row) and `provider` (a positional constant: "
+    "`'tavily'` or `'ddg'`). **Output:** one `VARCHAR` per input row (the answer or `NULL`). "
+    "**Edge cases:** queries with no instant answer return `NULL`; the `tavily` key is read from "
+    "the VGI secret provider, never from SQL; a `NULL` input query yields `NULL`."
+)
+
+_WEB_ANSWER_DOC_MD = (
+    "# web_answer\n\n"
+    "A scalar that returns a **synthesized one-line answer** for a question, or `NULL` when none "
+    "is available.\n\n"
+    "## Usage\n\n"
+    "```sql\n"
+    "SELECT search.main.web_answer('python programming language', 'ddg');\n"
+    "SELECT search.main.web_answer('who maintains duckdb', 'tavily');\n"
+    "```\n\n"
+    "The second argument is the provider name, a positional constant (scalars are positional-only "
+    "in VGI/DuckDB). Use `'ddg'` for a free DuckDuckGo Instant Answer or `'tavily'` for a keyed, "
+    "richer synthesis.\n\n"
+    "## Notes\n\n"
+    "- Returns `NULL` -- never an error -- when the provider has no answer, is unknown/disabled, or "
+    "is missing its key, so it is safe inside a wider query.\n"
+    "- The Tavily key comes from the VGI secret provider; keys are never passed in SQL.\n"
+    "- For ranked result rows (title/url/snippet/...) use the `web_search` table function."
+)
 
 
 class WebAnswer(ScalarFunction):
@@ -39,14 +75,26 @@ class WebAnswer(ScalarFunction):
         description = "Synthesized one-line answer for a query (tavily/ddg); NULL when unavailable"
         categories = ["search", "web", "rag"]
         required_secrets = ["tavily"]
-        examples = [
-            FunctionExample(
-                sql="SELECT search.main.web_answer('who maintains duckdb', 'tavily')",
-                description="Tavily-synthesized answer (needs a key)",
+        tags = {  # noqa: RUF012 - declarative metadata, not mutated
+            **object_tags(
+                title="Synthesized Web Answer",
+                doc_llm=_WEB_ANSWER_DOC_LLM,
+                doc_md=_WEB_ANSWER_DOC_MD,
+                keywords=(
+                    "web answer, instant answer, synthesized answer, zero-click, question "
+                    "answering, qa, ddg, duckduckgo, tavily, rag, snippet, fact lookup"
+                ),
+                relative_path="vgi_search/scalars.py",
             ),
+        }
+        examples = [
             FunctionExample(
                 sql="SELECT search.main.web_answer('python programming language', 'ddg')",
                 description="DuckDuckGo Instant Answer (free, no key)",
+            ),
+            FunctionExample(
+                sql="SELECT search.main.web_answer('who maintains duckdb', 'tavily')",
+                description="Tavily-synthesized answer (needs a key)",
             ),
         ]
 

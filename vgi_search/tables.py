@@ -47,10 +47,133 @@ from vgi.table_function import (
 from vgi_rpc import ArrowSerializableDataclass
 from vgi_rpc.rpc import OutputCollector
 
+from vgi_search.meta import object_tags
 from vgi_search.providers import DEFAULT_PROVIDER, ProviderError, build_provider, provider_info
 from vgi_search.result import Result
 from vgi_search.schema_utils import TIMESTAMPTZ, field
 from vgi_search.secrets import key_from_secret
+
+_WEB_SEARCH_DOC_LLM = (
+    "Run one web search against a pluggable provider and stream a unified, ranked result set as a "
+    "table.\n\n"
+    "`web_search(query, provider := ..., count := ..., page := ...)` returns rows with a fixed "
+    "shape -- `title`, `url`, `snippet`, `rank`, `source`, `published`, `score`, `extra` (JSON) -- "
+    "no matter which backend served them (Brave, Tavily, Exa, SearXNG, DuckDuckGo, or the opt-in "
+    "SerpApi/Serper scrapers).\n\n"
+    "**Use it for RAG / retrieval** when you need live web results to ground a prompt. It is a "
+    "table function, so named arguments apply: `provider` selects the backend (defaults to the "
+    "configured default), `count` caps results (1-50, default 10), and `page` is a 0-based page "
+    "index for pagination (page N skips N*count results) -- note it is `page`, not `offset` "
+    "(`offset` is a DuckDB reserved word).\n\n"
+    "**Inputs:** `query` (positional), `provider`/`count`/`page` (named). **Output:** the unified "
+    "result schema above; `published`/`score`/`extra` are `NULL` when a provider does not expose "
+    "them. **Edge cases:** keyed providers (`brave`/`tavily`/`exa`/serp*) need a key from the VGI "
+    "secret provider and return no rows when unconfigured; `ddg` works for free; a bad/disabled "
+    "provider name fails cleanly at bind; provider/network errors surface as a single DuckDB error, "
+    "never a worker crash."
+)
+
+_WEB_SEARCH_DOC_MD = (
+    "# web_search\n\n"
+    "The unified **web-search table function**: one search against a pluggable provider, streamed "
+    "as a single ranked result schema.\n\n"
+    "## Usage\n\n"
+    "```sql\n"
+    "SELECT title, url, snippet\n"
+    "  FROM search.main.web_search('duckdb arrow protocol', provider := 'ddg', count := 5);\n"
+    "SELECT * FROM search.main.web_search('vector database', provider := 'brave', page := 1);\n"
+    "```\n\n"
+    "## Arguments\n\n"
+    "- `query` -- the search string (positional).\n"
+    "- `provider :=` -- backend name (`brave`, `tavily`, `exa`, `searxng`, `ddg`, or opt-in "
+    "`serpapi`/`serper`); defaults to the configured default provider.\n"
+    "- `count :=` -- number of results, 1-50 (default 10).\n"
+    "- `page :=` -- 0-based page index for pagination (default 0). It is `page`, not `offset`.\n\n"
+    "## Notes\n\n"
+    "- Returns the same columns for every provider; `published`/`score`/`extra` are `NULL` when the "
+    "provider omits them.\n"
+    "- Keyed providers read their key from the VGI secret provider (never from SQL) and return no "
+    "rows until configured; `ddg` is free.\n"
+    "- Provider/network failures surface as a clean DuckDB error and never crash the worker."
+)
+
+_PROVIDERS_DOC_LLM = (
+    "List every search provider this worker knows about and whether each is ready to use, as a "
+    "table.\n\n"
+    "`search_providers()` takes no arguments and returns one row per available provider with "
+    "`provider` (its name), `requires_key` (whether an API key is needed), `supports_answer` "
+    "(whether it can serve `web_answer`), and `configured` (whether a key -- or a `base_url` for "
+    "SearXNG -- is actually present).\n\n"
+    "**Use it for discovery / preflight**: call it to see which `provider := ...` values will work "
+    "before issuing a `web_search`, or to confirm a secret/key is wired up. It needs no backend and "
+    "reveals no secret values -- only the boolean `configured` flag. The opt-in SerpApi/Serper "
+    "providers appear only when `VGI_SEARCH_ENABLE_SERP=1`."
+)
+
+_PROVIDERS_DOC_MD = (
+    "# search_providers\n\n"
+    "A zero-argument discovery table listing every search provider and whether it is configured.\n\n"
+    "## Usage\n\n"
+    "```sql\n"
+    "SELECT * FROM search.main.search_providers() ORDER BY provider;\n"
+    "SELECT provider FROM search.main.search_providers() WHERE configured;\n"
+    "```\n\n"
+    "## Notes\n\n"
+    "- One row per available provider; reflects keys resolved from the VGI secret provider (with an "
+    "env-var fallback) without exposing any secret value.\n"
+    "- `configured` means the provider needs no key, has a resolved key, or (for SearXNG) has a "
+    "`base_url`.\n"
+    "- The opt-in SerpApi/Serper providers are listed only when `VGI_SEARCH_ENABLE_SERP=1`.\n"
+    "- Use it before `web_search` to pick a working `provider := ...`."
+)
+
+# Guaranteed-runnable, catalog-qualified examples (VGI509). Each `sql` is
+# self-contained and re-runnable against an attached `search` worker.
+# `search_providers()` needs no backend; the `ddg` calls use the free, keyless
+# DuckDuckGo endpoint. `expected_result` is omitted on purpose -- the linter only
+# needs each query to execute cleanly, and live web output is not pinnable.
+EXECUTABLE_EXAMPLES = (
+    "[\n"
+    "  {\n"
+    '    "description": "List the search providers and whether each is configured (no backend '
+    'needed).",\n'
+    '    "sql": "SELECT provider, requires_key, configured FROM search.main.search_providers() '
+    'ORDER BY provider"\n'
+    "  },\n"
+    "  {\n"
+    '    "description": "Run a free DuckDuckGo web search and read the top result titles/URLs.",\n'
+    '    "sql": "SELECT title, url, rank FROM search.main.web_search(\'python programming '
+    "language', provider := 'ddg', count := 5) ORDER BY rank\"\n"
+    "  },\n"
+    "  {\n"
+    '    "description": "Get a free synthesized one-line answer via DuckDuckGo Instant Answer.",\n'
+    "    \"sql\": \"SELECT search.main.web_answer('python programming language', 'ddg') AS "
+    'answer"\n'
+    "  }\n"
+    "]"
+)
+
+_WEB_SEARCH_COLUMNS_MD = (
+    "| column | type | description |\n"
+    "|---|---|---|\n"
+    "| `title` | VARCHAR | Result title. |\n"
+    "| `url` | VARCHAR | Result URL. |\n"
+    "| `snippet` | VARCHAR | Description / excerpt for the result. |\n"
+    "| `rank` | INTEGER | 1-based position in the result set. |\n"
+    "| `source` | VARCHAR | Provider that served the result. |\n"
+    "| `published` | TIMESTAMPTZ | Publication time when the provider exposes one (else NULL). |\n"
+    "| `score` | DOUBLE | Provider relevance score when available (else NULL). |\n"
+    "| `extra` | VARCHAR | Provider-specific fields, JSON-encoded (else NULL). |"
+)
+
+_PROVIDERS_COLUMNS_MD = (
+    "| column | type | description |\n"
+    "|---|---|---|\n"
+    "| `provider` | VARCHAR | Provider name (pass as `provider := ...`). |\n"
+    "| `requires_key` | BOOLEAN | Whether the provider needs an API key. |\n"
+    "| `supports_answer` | BOOLEAN | Whether the provider exposes a synthesized answer. |\n"
+    "| `configured` | BOOLEAN | Whether a key (or base_url for searxng) is configured. |"
+)
 
 # Rows emitted per process tick. Deliberately small so a single page spans
 # several batches -- exercising the scan-state round-trip across batch boundaries.
@@ -163,31 +286,33 @@ class WebSearch(TableFunctionGenerator[WebSearchArgs, ScanState]):
         categories = ["search", "web", "rag", "retrieval"]
         required_secrets = _KEYED_SECRETS
         tags = {  # noqa: RUF012 - declarative metadata, not mutated
-            "vgi.columns_md": (
-                "| column | type | description |\n"
-                "|---|---|---|\n"
-                "| `title` | VARCHAR | Result title. |\n"
-                "| `url` | VARCHAR | Result URL. |\n"
-                "| `snippet` | VARCHAR | Description / excerpt for the result. |\n"
-                "| `rank` | INTEGER | 1-based position in the result set. |\n"
-                "| `source` | VARCHAR | Provider that served the result. |\n"
-                "| `published` | TIMESTAMPTZ | Publication time when the provider exposes one "
-                "(else NULL). |\n"
-                "| `score` | DOUBLE | Provider relevance score when available (else NULL). |\n"
-                "| `extra` | VARCHAR | Provider-specific fields, JSON-encoded (else NULL). |"
+            **object_tags(
+                title="Unified Web Search",
+                doc_llm=_WEB_SEARCH_DOC_LLM,
+                doc_md=_WEB_SEARCH_DOC_MD,
+                keywords=(
+                    "web search, search, serp, results, retrieval, rag, brave, tavily, exa, "
+                    "searxng, duckduckgo, ddg, query, ranked results, pagination, provider"
+                ),
+                relative_path="vgi_search/tables.py",
             ),
+            "vgi.result_columns_md": _WEB_SEARCH_COLUMNS_MD,
         }
         examples = [
+            FunctionExample(
+                sql=(
+                    "SELECT title, url, rank FROM "
+                    "search.main.web_search('python programming language', provider := 'ddg', "
+                    "count := 5) ORDER BY rank"
+                ),
+                description="Top web results via the free DuckDuckGo provider",
+            ),
             FunctionExample(
                 sql=(
                     "SELECT title, url, snippet FROM "
                     "search.main.web_search('duckdb arrow protocol', provider := 'brave', count := 10)"
                 ),
-                description="Top-10 web results via Brave",
-            ),
-            FunctionExample(
-                sql="SELECT * FROM search.main.web_search('who maintains duckdb', provider := 'ddg')",
-                description="DuckDuckGo Instant Answer (zero-click; free, no key)",
+                description="Top-10 web results via Brave (needs a key)",
             ),
         ]
 
@@ -317,16 +442,18 @@ class SearchProviders(TableFunctionGenerator[_ProvidersArgs]):
         categories = ["search", "metadata"]
         required_secrets = _KEYED_SECRETS
         tags = {  # noqa: RUF012 - declarative metadata, not mutated
-            "vgi.columns_md": (
-                "| column | type | description |\n"
-                "|---|---|---|\n"
-                "| `provider` | VARCHAR | Provider name (pass as `provider := ...`). |\n"
-                "| `requires_key` | BOOLEAN | Whether the provider needs an API key. |\n"
-                "| `supports_answer` | BOOLEAN | Whether the provider exposes a synthesized "
-                "answer. |\n"
-                "| `configured` | BOOLEAN | Whether a key (or base_url for searxng) is "
-                "configured. |"
+            **object_tags(
+                title="Search Provider Directory",
+                doc_llm=_PROVIDERS_DOC_LLM,
+                doc_md=_PROVIDERS_DOC_MD,
+                keywords=(
+                    "providers, search providers, discovery, capabilities, configured, api key, "
+                    "preflight, brave, tavily, exa, searxng, duckduckgo, serpapi, serper"
+                ),
+                relative_path="vgi_search/tables.py",
             ),
+            "vgi.result_columns_md": _PROVIDERS_COLUMNS_MD,
+            "vgi.executable_examples": EXECUTABLE_EXAMPLES,
         }
         examples = [
             FunctionExample(
