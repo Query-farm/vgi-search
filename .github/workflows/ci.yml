@@ -95,11 +95,21 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
   integration:
-    name: End-to-end SQL on ${{ matrix.os }}
+    name: SQL E2E (${{ matrix.transport }}) on ${{ matrix.os }}
     needs: resolve-haybarn
     strategy:
       fail-fast: false
       matrix:
+        # Run the SAME sqllogictest suite over every VGI transport. The vgi
+        # extension picks the transport from the ATTACH LOCATION string that
+        # run-integration.sh builds per $TRANSPORT (the mock launcher
+        # scripts/mock_worker.py serves all three — it forwards argv to
+        # SearchWorker.main() and keeps the in-process mock server alive):
+        #   subprocess : `.venv/bin/python scripts/mock_worker.py` (stdio)
+        #   http       : `http://127.0.0.1:<port>`   (launcher booted with --http)
+        #   unix       : `unix:///tmp/search.sock`   (launcher booted with --unix)
+        os: [ubuntu-latest, macos-latest]
+        transport: [subprocess, http, unix]
         include:
           - { os: ubuntu-latest, asset: haybarn_unittest-linux-amd64.zip }
           - { os: macos-latest,  asset: haybarn_unittest-osx-arm64.zip }
@@ -116,8 +126,10 @@ jobs:
       - name: Set up Python 3.13
         run: uv python install 3.13
 
-      - name: Install the worker (from the lockfile)
-        run: uv sync --frozen --python 3.13
+      - name: Install the worker (from the lockfile, with the http extra)
+        # The `http` extra pulls in waitress so the worker can serve `--http`.
+        # Harmless for the subprocess/unix legs; required for the http leg.
+        run: uv sync --frozen --python 3.13 --extra http
 
       - name: Download haybarn-unittest
         run: |
@@ -140,7 +152,9 @@ jobs:
           UNITTEST="$PWD/$(find hb -name 'haybarn-unittest' -type f | head -1)"
           chmod +x "$UNITTEST"
           echo "HAYBARN_UNITTEST=$UNITTEST" >> "$GITHUB_ENV"
-          echo "VGI_SEARCH_WORKER=$PWD/.venv/bin/python $PWD/scripts/mock_worker.py" >> "$GITHUB_ENV"
+          echo "WORKER_CMD=$PWD/.venv/bin/python $PWD/scripts/mock_worker.py" >> "$GITHUB_ENV"
 
-      - name: Run extension integration suite
+      - name: Run extension integration suite (${{ matrix.transport }})
         run: ci/run-integration.sh
+        env:
+          TRANSPORT: ${{ matrix.transport }}
