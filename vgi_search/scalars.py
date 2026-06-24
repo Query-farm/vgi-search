@@ -41,11 +41,11 @@ class WebAnswer(ScalarFunction):
         required_secrets = ["tavily"]
         examples = [
             FunctionExample(
-                sql="SELECT web_answer('who maintains duckdb', 'tavily')",
+                sql="SELECT search.main.web_answer('who maintains duckdb', 'tavily')",
                 description="Tavily-synthesized answer (needs a key)",
             ),
             FunctionExample(
-                sql="SELECT web_answer('python programming language', 'ddg')",
+                sql="SELECT search.main.web_answer('python programming language', 'ddg')",
                 description="DuckDuckGo Instant Answer (free, no key)",
             ),
         ]

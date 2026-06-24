@@ -162,16 +162,31 @@ class WebSearch(TableFunctionGenerator[WebSearchArgs, ScanState]):
         description = "Search the web via a pluggable provider; returns the unified result schema"
         categories = ["search", "web", "rag", "retrieval"]
         required_secrets = _KEYED_SECRETS
+        tags = {  # noqa: RUF012 - declarative metadata, not mutated
+            "vgi.columns_md": (
+                "| column | type | description |\n"
+                "|---|---|---|\n"
+                "| `title` | VARCHAR | Result title. |\n"
+                "| `url` | VARCHAR | Result URL. |\n"
+                "| `snippet` | VARCHAR | Description / excerpt for the result. |\n"
+                "| `rank` | INTEGER | 1-based position in the result set. |\n"
+                "| `source` | VARCHAR | Provider that served the result. |\n"
+                "| `published` | TIMESTAMPTZ | Publication time when the provider exposes one "
+                "(else NULL). |\n"
+                "| `score` | DOUBLE | Provider relevance score when available (else NULL). |\n"
+                "| `extra` | VARCHAR | Provider-specific fields, JSON-encoded (else NULL). |"
+            ),
+        }
         examples = [
             FunctionExample(
                 sql=(
                     "SELECT title, url, snippet FROM "
-                    "web_search('duckdb arrow protocol', provider := 'brave', count := 10)"
+                    "search.main.web_search('duckdb arrow protocol', provider := 'brave', count := 10)"
                 ),
                 description="Top-10 web results via Brave",
             ),
             FunctionExample(
-                sql="SELECT * FROM web_search('who maintains duckdb', provider := 'ddg')",
+                sql="SELECT * FROM search.main.web_search('who maintains duckdb', provider := 'ddg')",
                 description="DuckDuckGo Instant Answer (zero-click; free, no key)",
             ),
         ]
@@ -301,9 +316,21 @@ class SearchProviders(TableFunctionGenerator[_ProvidersArgs]):
         description = "List available search providers and whether each has a key/base_url configured"
         categories = ["search", "metadata"]
         required_secrets = _KEYED_SECRETS
+        tags = {  # noqa: RUF012 - declarative metadata, not mutated
+            "vgi.columns_md": (
+                "| column | type | description |\n"
+                "|---|---|---|\n"
+                "| `provider` | VARCHAR | Provider name (pass as `provider := ...`). |\n"
+                "| `requires_key` | BOOLEAN | Whether the provider needs an API key. |\n"
+                "| `supports_answer` | BOOLEAN | Whether the provider exposes a synthesized "
+                "answer. |\n"
+                "| `configured` | BOOLEAN | Whether a key (or base_url for searxng) is "
+                "configured. |"
+            ),
+        }
         examples = [
             FunctionExample(
-                sql="SELECT * FROM search_providers() ORDER BY provider",
+                sql="SELECT * FROM search.main.search_providers() ORDER BY provider",
                 description="Which providers are available and configured",
             ),
         ]
