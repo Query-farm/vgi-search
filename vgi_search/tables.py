@@ -28,6 +28,7 @@ fallback for local/CI); they are never taken from SQL.
 
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass
 from typing import Annotated, Any, ClassVar
@@ -290,11 +291,24 @@ class WebSearch(TableFunctionGenerator[WebSearchArgs, ScanState]):
                 title="Unified Web Search",
                 doc_llm=_WEB_SEARCH_DOC_LLM,
                 doc_md=_WEB_SEARCH_DOC_MD,
-                keywords=(
-                    "web search, search, serp, results, retrieval, rag, brave, tavily, exa, "
-                    "searxng, duckduckgo, ddg, query, ranked results, pagination, provider"
-                ),
-                relative_path="vgi_search/tables.py",
+                keywords=[
+                    "web search",
+                    "search",
+                    "serp",
+                    "results",
+                    "retrieval",
+                    "rag",
+                    "brave",
+                    "tavily",
+                    "exa",
+                    "searxng",
+                    "duckduckgo",
+                    "ddg",
+                    "query",
+                    "ranked results",
+                    "pagination",
+                    "provider",
+                ],
             ),
             "vgi.result_columns_md": _WEB_SEARCH_COLUMNS_MD,
         }
@@ -446,11 +460,22 @@ class SearchProviders(TableFunctionGenerator[_ProvidersArgs]):
                 title="Search Provider Directory",
                 doc_llm=_PROVIDERS_DOC_LLM,
                 doc_md=_PROVIDERS_DOC_MD,
-                keywords=(
-                    "providers, search providers, discovery, capabilities, configured, api key, "
-                    "preflight, brave, tavily, exa, searxng, duckduckgo, serpapi, serper"
-                ),
-                relative_path="vgi_search/tables.py",
+                keywords=[
+                    "providers",
+                    "search providers",
+                    "discovery",
+                    "capabilities",
+                    "configured",
+                    "api key",
+                    "preflight",
+                    "brave",
+                    "tavily",
+                    "exa",
+                    "searxng",
+                    "duckduckgo",
+                    "serpapi",
+                    "serper",
+                ],
             ),
             "vgi.result_columns_md": _PROVIDERS_COLUMNS_MD,
             "vgi.executable_examples": EXECUTABLE_EXAMPLES,
@@ -489,3 +514,84 @@ class SearchProviders(TableFunctionGenerator[_ProvidersArgs]):
 
 
 TABLE_FUNCTIONS: list[type] = [WebSearch, SearchProviders]
+
+
+# --- Table view of the parameterless provider directory -------------------
+#
+# `search_providers()` takes no arguments and always returns the same row set,
+# so it is also exposed as a regular table (VGI311): `SELECT * FROM
+# search.main.search_providers` (no parentheses). The table scans the same
+# generator and shares its column schema; it carries its own discovery tags
+# (table-flavored, distinct from the function's) and constraints.
+
+_PROVIDERS_TABLE_DOC_MD = (
+    "# search_providers (table)\n\n"
+    "A regular table view of the provider directory: one row per search provider this worker "
+    "knows about, with whether each is ready to use. It scans the same data as the "
+    "`search_providers()` function but reads as a plain table, so you can `SELECT * FROM "
+    "search.main.search_providers` without parentheses.\n\n"
+    "## Usage\n\n"
+    "```sql\n"
+    "SELECT * FROM search.main.search_providers ORDER BY provider;\n"
+    "SELECT provider FROM search.main.search_providers WHERE configured;\n"
+    "```\n\n"
+    "## Columns\n\n"
+    "- `provider` -- provider name (the value to pass as `provider := ...` to `web_search`); "
+    "primary key.\n"
+    "- `requires_key` -- whether the provider needs an API key.\n"
+    "- `supports_answer` -- whether the provider can serve `web_answer`.\n"
+    "- `configured` -- whether a key (or, for SearXNG, a `base_url`) is actually present.\n\n"
+    "## Notes\n\n"
+    "- Reflects keys resolved from the VGI secret provider (with an env-var fallback) without "
+    "exposing any secret value.\n"
+    "- The opt-in SerpApi/Serper providers appear only when `VGI_SEARCH_ENABLE_SERP=1`.\n"
+    "- Use it before `web_search` to pick a working `provider := ...`."
+)
+
+_PROVIDERS_TABLE_EXAMPLE_QUERIES = json.dumps(
+    [
+        {
+            "description": "List every provider and whether each is configured.",
+            "sql": "SELECT * FROM search.main.search_providers ORDER BY provider",
+        },
+        {
+            "description": "Just the providers that are ready to use.",
+            "sql": "SELECT provider FROM search.main.search_providers WHERE configured",
+        },
+        {
+            "description": "Providers that can serve web_answer.",
+            "sql": "SELECT provider FROM search.main.search_providers WHERE supports_answer",
+        },
+    ]
+)
+
+PROVIDERS_TABLE_TAGS: dict[str, str] = {
+    "vgi.title": "Search Provider Directory (table)",
+    "vgi.doc_llm": _PROVIDERS_DOC_LLM,
+    "vgi.doc_md": _PROVIDERS_TABLE_DOC_MD,
+    "vgi.keywords": json.dumps(
+        [
+            "providers",
+            "search providers",
+            "directory",
+            "discovery",
+            "capabilities",
+            "configured",
+            "api key",
+            "preflight",
+            "brave",
+            "tavily",
+            "exa",
+            "searxng",
+            "duckduckgo",
+            "serpapi",
+            "serper",
+        ]
+    ),
+    # VGI123 classifying tags (bare keys) for faceting.
+    "domain": "information-retrieval",
+    "category": "web-search",
+    "topic": "search-providers",
+    "vgi.example_queries": _PROVIDERS_TABLE_EXAMPLE_QUERIES,
+    "vgi.result_columns_md": _PROVIDERS_COLUMNS_MD,
+}

@@ -80,11 +80,20 @@ class WebAnswer(ScalarFunction):
                 title="Synthesized Web Answer",
                 doc_llm=_WEB_ANSWER_DOC_LLM,
                 doc_md=_WEB_ANSWER_DOC_MD,
-                keywords=(
-                    "web answer, instant answer, synthesized answer, zero-click, question "
-                    "answering, qa, ddg, duckduckgo, tavily, rag, snippet, fact lookup"
-                ),
-                relative_path="vgi_search/scalars.py",
+                keywords=[
+                    "web answer",
+                    "instant answer",
+                    "synthesized answer",
+                    "zero-click",
+                    "question answering",
+                    "qa",
+                    "ddg",
+                    "duckduckgo",
+                    "tavily",
+                    "rag",
+                    "snippet",
+                    "fact lookup",
+                ],
             ),
         }
         examples = [

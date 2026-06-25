@@ -1,7 +1,7 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
-#     "vgi-python[http]>=0.8.4",
+#     "vgi-python[http]>=0.8.5",
 #     "httpx>=0.27",
 # ]
 # ///
@@ -34,11 +34,13 @@ fall back to the ``<PROVIDER>_API_KEY`` env vars. Keys are NEVER passed in SQL.
 
 from __future__ import annotations
 
+import json
+
 from vgi import Worker
-from vgi.catalog import Catalog, Schema
+from vgi.catalog import Catalog, Schema, Table
 
 from vgi_search.scalars import SCALAR_FUNCTIONS
-from vgi_search.tables import TABLE_FUNCTIONS
+from vgi_search.tables import PROVIDERS_TABLE_TAGS, TABLE_FUNCTIONS, SearchProviders
 
 _CATALOG_DESCRIPTION_LLM = (
     "Run web searches from SQL through one pluggable provider surface (Brave, Tavily, Exa, "
@@ -106,9 +108,25 @@ _SEARCH_CATALOG = Catalog(
     source_url="https://github.com/Query-farm/vgi-search",
     tags={
         "vgi.title": "Unified Web Search",
-        "vgi.keywords": (
-            "web search, search, retrieval, rag, serp, results, brave, tavily, exa, searxng, "
-            "duckduckgo, ddg, serpapi, serper, web answer, providers"
+        "vgi.keywords": json.dumps(
+            [
+                "web search",
+                "search",
+                "retrieval",
+                "rag",
+                "serp",
+                "results",
+                "brave",
+                "tavily",
+                "exa",
+                "searxng",
+                "duckduckgo",
+                "ddg",
+                "serpapi",
+                "serper",
+                "web answer",
+                "providers",
+            ]
         ),
         "vgi.doc_llm": _CATALOG_DESCRIPTION_LLM,
         "vgi.doc_md": _CATALOG_DESCRIPTION_MD,
@@ -124,20 +142,49 @@ _SEARCH_CATALOG = Catalog(
             comment="Unified web search over pluggable providers for SQL / RAG",
             tags={
                 "vgi.title": "Web Search — main",
-                "vgi.keywords": (
-                    "web search, web_search, web_answer, search_providers, retrieval, rag, serp, "
-                    "results, providers, brave, tavily, exa, searxng, duckduckgo, ddg"
+                "vgi.keywords": json.dumps(
+                    [
+                        "web search",
+                        "web_search",
+                        "web_answer",
+                        "search_providers",
+                        "retrieval",
+                        "rag",
+                        "serp",
+                        "results",
+                        "providers",
+                        "brave",
+                        "tavily",
+                        "exa",
+                        "searxng",
+                        "duckduckgo",
+                        "ddg",
+                    ]
                 ),
                 # VGI123 classifying tags (BARE keys: domain/category/topic) for faceting.
                 "domain": "information-retrieval",
                 "category": "web-search",
                 "topic": "search-providers",
-                "vgi.source_url": ("https://github.com/Query-farm/vgi-search/blob/main/search_worker.py"),
                 "vgi.doc_llm": _SCHEMA_DESCRIPTION_LLM,
                 "vgi.doc_md": _SCHEMA_DESCRIPTION_MD,
                 "vgi.example_queries": _SCHEMA_EXAMPLE_QUERIES,
             },
             functions=[*SCALAR_FUNCTIONS, *TABLE_FUNCTIONS],
+            # `search_providers()` is parameterless and always returns the same
+            # provider directory, so also expose it as a regular table backed by
+            # the same generator (VGI311): `SELECT * FROM search.main.search_providers`.
+            tables=[
+                Table(
+                    name="search_providers",
+                    function=SearchProviders,
+                    comment="Directory of available search providers and whether each is configured",
+                    # Every provider row is fully populated, and the provider name
+                    # uniquely identifies a row (VGI806/VGI807 constraints).
+                    primary_key=(("provider",),),
+                    not_null=("provider", "requires_key", "supports_answer", "configured"),
+                    tags=PROVIDERS_TABLE_TAGS,
+                ),
+            ],
         ),
     ],
 )
