@@ -310,6 +310,7 @@ class WebSearch(TableFunctionGenerator[WebSearchArgs, ScanState]):
                     "provider",
                 ],
             ),
+            "vgi.category": "Web Search",
             "vgi.result_columns_md": _WEB_SEARCH_COLUMNS_MD,
         }
         examples = [
@@ -477,6 +478,7 @@ class SearchProviders(TableFunctionGenerator[_ProvidersArgs]):
                     "serper",
                 ],
             ),
+            "vgi.category": "Provider Discovery",
             "vgi.result_columns_md": _PROVIDERS_COLUMNS_MD,
             "vgi.executable_examples": EXECUTABLE_EXAMPLES,
         }
@@ -528,8 +530,8 @@ _PROVIDERS_TABLE_DOC_MD = (
     "# search_providers (table)\n\n"
     "A regular table view of the provider directory: one row per search provider this worker "
     "knows about, with whether each is ready to use. It scans the same data as the "
-    "`search_providers()` function but reads as a plain table, so you can `SELECT * FROM "
-    "search.main.search_providers` without parentheses.\n\n"
+    "`search_providers()` function but reads as a plain table, so you can query "
+    "`search.main.search_providers` without parentheses.\n\n"
     "## Usage\n\n"
     "```sql\n"
     "SELECT * FROM search.main.search_providers ORDER BY provider;\n"
@@ -592,6 +594,7 @@ PROVIDERS_TABLE_TAGS: dict[str, str] = {
     "domain": "information-retrieval",
     "category": "web-search",
     "topic": "search-providers",
+    "vgi.category": "Provider Discovery",
     "vgi.example_queries": _PROVIDERS_TABLE_EXAMPLE_QUERIES,
     "vgi.result_columns_md": _PROVIDERS_COLUMNS_MD,
 }

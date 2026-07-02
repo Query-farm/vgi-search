@@ -95,6 +95,7 @@ class WebAnswer(ScalarFunction):
                     "fact lookup",
                 ],
             ),
+            "vgi.category": "Web Search",
         }
         examples = [
             FunctionExample(

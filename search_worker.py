@@ -80,10 +80,12 @@ _CATALOG_DESCRIPTION_MD = (
     "`web_answer(query, provider)` returns a single synthesized one-line answer (via Tavily or the "
     "free DuckDuckGo Instant Answer API) or NULL when none is available. The table function "
     "`search_providers()` lists every provider and whether each currently has a key or base URL "
-    "configured. Typical SQL looks like "
-    "`SELECT title, url, snippet FROM search.web_search('duckdb arrow protocol', provider := 'brave', "
-    "count := 10)` for retrieval, or `SELECT search.web_answer('who maintains duckdb', 'tavily')` for "
-    "a quick fact.\n\n"
+    "configured. Typical SQL looks like this:\n\n"
+    "```sql\n"
+    "SELECT title, url, snippet\n"
+    "  FROM search.web_search('duckdb arrow protocol', provider := 'brave', count := 10);\n"
+    "SELECT search.web_answer('who maintains duckdb', 'tavily');\n"
+    "```\n\n"
     "### Providers & documentation\n\n"
     "- **Brave Search** -- [API docs](https://brave.com/search/api/), "
     "[developer dashboard](https://api-dashboard.search.brave.com/app/documentation/web-search/get-started)\n"
@@ -128,6 +130,83 @@ _SCHEMA_EXAMPLE_QUERIES = (
     "SELECT search.main.web_answer('python programming language', 'ddg') AS answer;"
 )
 
+# VGI413: the schema's category registry. Each object declares a `vgi.category`
+# naming one of these; categories drive navigation / listing sections / SEO.
+_SCHEMA_CATEGORIES = json.dumps(
+    [
+        {
+            "name": "Web Search",
+            "description": (
+                "Run live web searches and synthesized answers through the pluggable "
+                "provider surface (web_search, web_answer)."
+            ),
+        },
+        {
+            "name": "Provider Discovery",
+            "description": (
+                "Inspect which search providers exist and whether each is configured, "
+                "before choosing a provider (search_providers)."
+            ),
+        },
+    ]
+)
+
+# VGI152: an analyst-task suite so `vgi-lint simulate` can measure how well an
+# agent actually uses this worker. Every reference query uses the keyless `ddg`
+# provider or the backend-free `search_providers()` directory, so the suite runs
+# without any API key or paid subscription.
+_AGENT_TEST_TASKS = json.dumps(
+    [
+        {
+            "name": "provider-directory",
+            "prompt": (
+                "Show me the full directory of search providers this worker supports: every provider, "
+                "with all of its columns, ordered by provider name."
+            ),
+            "reference_sql": "SELECT * FROM search.main.search_providers() ORDER BY provider",
+        },
+        {
+            "name": "keyed-providers",
+            "prompt": "Which of the search providers require an API key? List just their names, sorted.",
+            "reference_sql": (
+                "SELECT provider FROM search.main.search_providers() WHERE requires_key ORDER BY provider"
+            ),
+        },
+        {
+            "name": "answer-capable-providers",
+            "prompt": "Which providers can return a synthesized one-line answer for web_answer? List their names, sorted.",
+            "reference_sql": (
+                "SELECT provider FROM search.main.search_providers() WHERE supports_answer ORDER BY provider"
+            ),
+        },
+        {
+            "name": "ready-to-use-providers",
+            "prompt": "List the names of the search providers that are configured and ready to use right now, sorted.",
+            "reference_sql": ("SELECT provider FROM search.main.search_providers() WHERE configured ORDER BY provider"),
+        },
+        {
+            "name": "free-web-search",
+            "prompt": (
+                "Using the free, keyless DuckDuckGo (ddg) provider, search for 'python programming "
+                "language' and return the titles and URLs of the top 5 results ordered by rank."
+            ),
+            "reference_sql": (
+                "SELECT title, url FROM "
+                "search.main.web_search('python programming language', provider := 'ddg', count := 5) "
+                "ORDER BY rank LIMIT 5"
+            ),
+        },
+        {
+            "name": "keyless-one-line-answer",
+            "prompt": (
+                "Get a single synthesized one-line answer for 'python programming language' using the "
+                "free DuckDuckGo (ddg) provider, without any API key."
+            ),
+            "reference_sql": "SELECT search.main.web_answer('python programming language', 'ddg') AS answer",
+        },
+    ]
+)
+
 _SEARCH_CATALOG = Catalog(
     name="search",
     default_schema="main",
@@ -162,6 +241,7 @@ _SEARCH_CATALOG = Catalog(
         "vgi.license": "MIT",
         "vgi.support_contact": "https://github.com/Query-farm/vgi-search/issues",
         "vgi.support_policy_url": "https://github.com/Query-farm/vgi-search/blob/main/README.md",
+        "vgi.agent_test_tasks": _AGENT_TEST_TASKS,
     },
     schemas=[
         Schema(
@@ -195,6 +275,7 @@ _SEARCH_CATALOG = Catalog(
                 "vgi.doc_llm": _SCHEMA_DESCRIPTION_LLM,
                 "vgi.doc_md": _SCHEMA_DESCRIPTION_MD,
                 "vgi.example_queries": _SCHEMA_EXAMPLE_QUERIES,
+                "vgi.categories": _SCHEMA_CATEGORIES,
             },
             functions=[*SCALAR_FUNCTIONS, *TABLE_FUNCTIONS],
             # `search_providers()` is parameterless and always returns the same
