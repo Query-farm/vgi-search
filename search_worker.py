@@ -1,7 +1,7 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
-#     "vgi-python[http]>=0.8.5",
+#     "vgi-python[http]>=0.15.0",
 #     "httpx>=0.27",
 # ]
 # ///
@@ -80,12 +80,8 @@ _CATALOG_DESCRIPTION_MD = (
     "`web_answer(query, provider)` returns a single synthesized one-line answer (via Tavily or the "
     "free DuckDuckGo Instant Answer API) or NULL when none is available. The table function "
     "`search_providers()` lists every provider and whether each currently has a key or base URL "
-    "configured. Typical SQL looks like this:\n\n"
-    "```sql\n"
-    "SELECT title, url, snippet\n"
-    "  FROM search.web_search('duckdb arrow protocol', provider := 'brave', count := 10);\n"
-    "SELECT search.web_answer('who maintains duckdb', 'tavily');\n"
-    "```\n\n"
+    "configured. Runnable, catalog-qualified queries for each function live in that object's "
+    "examples.\n\n"
     "### Providers & documentation\n\n"
     "- **Brave Search** -- [API docs](https://brave.com/search/api/), "
     "[developer dashboard](https://api-dashboard.search.brave.com/app/documentation/web-search/get-started)\n"
@@ -121,7 +117,7 @@ _SCHEMA_DESCRIPTION_MD = (
 )
 
 _SCHEMA_EXAMPLE_QUERIES = (
-    "SELECT * FROM search.main.search_providers() ORDER BY provider;\n"
+    "SELECT provider, requires_key, configured FROM search.main.search_providers() ORDER BY provider;\n"
     "SELECT title, url, rank FROM "
     "search.main.web_search('python programming language', provider := 'ddg', count := 5) "
     "ORDER BY rank;\n"

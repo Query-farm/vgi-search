@@ -77,13 +77,8 @@ _WEB_SEARCH_DOC_LLM = (
 _WEB_SEARCH_DOC_MD = (
     "# web_search\n\n"
     "The unified **web-search table function**: one search against a pluggable provider, streamed "
-    "as a single ranked result schema.\n\n"
-    "## Usage\n\n"
-    "```sql\n"
-    "SELECT title, url, snippet\n"
-    "  FROM search.main.web_search('duckdb arrow protocol', provider := 'ddg', count := 5);\n"
-    "SELECT * FROM search.main.web_search('vector database', provider := 'brave', page := 1);\n"
-    "```\n\n"
+    "as a single ranked result schema. Runnable, catalog-qualified queries live in this object's "
+    "examples; the arguments and result columns are described below.\n\n"
     "## Arguments\n\n"
     "- `query` -- the search string (positional).\n"
     "- `provider :=` -- backend name (`brave`, `tavily`, `exa`, `searxng`, `ddg`, or opt-in "
@@ -113,12 +108,8 @@ _PROVIDERS_DOC_LLM = (
 
 _PROVIDERS_DOC_MD = (
     "# search_providers\n\n"
-    "A zero-argument discovery table listing every search provider and whether it is configured.\n\n"
-    "## Usage\n\n"
-    "```sql\n"
-    "SELECT * FROM search.main.search_providers() ORDER BY provider;\n"
-    "SELECT provider FROM search.main.search_providers() WHERE configured;\n"
-    "```\n\n"
+    "A zero-argument discovery table listing every search provider and whether it is configured. "
+    "Runnable, catalog-qualified queries live in this object's examples.\n\n"
     "## Notes\n\n"
     "- One row per available provider; reflects keys resolved from the VGI secret provider (with an "
     "env-var fallback) without exposing any secret value.\n"
@@ -154,26 +145,50 @@ EXECUTABLE_EXAMPLES = (
     "]"
 )
 
-_WEB_SEARCH_COLUMNS_MD = (
-    "| column | type | description |\n"
-    "|---|---|---|\n"
-    "| `title` | VARCHAR | Result title. |\n"
-    "| `url` | VARCHAR | Result URL. |\n"
-    "| `snippet` | VARCHAR | Description / excerpt for the result. |\n"
-    "| `rank` | INTEGER | 1-based position in the result set. |\n"
-    "| `source` | VARCHAR | Provider that served the result. |\n"
-    "| `published` | TIMESTAMPTZ | Publication time when the provider exposes one (else NULL). |\n"
-    "| `score` | DOUBLE | Provider relevance score when available (else NULL). |\n"
-    "| `extra` | VARCHAR | Provider-specific fields, JSON-encoded (else NULL). |"
+# Structured result schemas (VGI307/VGI321-323): a JSON array of
+# {name, type, description}, one per returned column. `type` is the real DuckDB
+# type the worker's Arrow output maps to, so these must track WEB_SEARCH_SCHEMA /
+# _PROVIDERS_SCHEMA (VGI910 compares them against what the function returns).
+_WEB_SEARCH_COLUMNS_SCHEMA = json.dumps(
+    [
+        {"name": "title", "type": "VARCHAR", "description": "Result title."},
+        {"name": "url", "type": "VARCHAR", "description": "Result URL."},
+        {"name": "snippet", "type": "VARCHAR", "description": "Description / excerpt for the result."},
+        {"name": "rank", "type": "INTEGER", "description": "1-based position of the result within the page."},
+        {"name": "source", "type": "VARCHAR", "description": "Provider name that served the result."},
+        {
+            "name": "published",
+            "type": "TIMESTAMP WITH TIME ZONE",
+            "description": "Publication time when the provider exposes one (UTC); NULL otherwise.",
+        },
+        {"name": "score", "type": "DOUBLE", "description": "Provider relevance score when available; NULL otherwise."},
+        {
+            "name": "extra",
+            "type": "VARCHAR",
+            "description": "Provider-specific fields as a JSON string (read with ->> / json_extract); NULL otherwise.",
+        },
+    ]
 )
 
-_PROVIDERS_COLUMNS_MD = (
-    "| column | type | description |\n"
-    "|---|---|---|\n"
-    "| `provider` | VARCHAR | Provider name (pass as `provider := ...`). |\n"
-    "| `requires_key` | BOOLEAN | Whether the provider needs an API key. |\n"
-    "| `supports_answer` | BOOLEAN | Whether the provider exposes a synthesized answer. |\n"
-    "| `configured` | BOOLEAN | Whether a key (or base_url for searxng) is configured. |"
+_PROVIDERS_COLUMNS_SCHEMA = json.dumps(
+    [
+        {
+            "name": "provider",
+            "type": "VARCHAR",
+            "description": "Provider name (pass as provider := ... to web_search).",
+        },
+        {"name": "requires_key", "type": "BOOLEAN", "description": "Whether the provider needs an API key."},
+        {
+            "name": "supports_answer",
+            "type": "BOOLEAN",
+            "description": "Whether the provider can serve web_answer (a synthesized one-line answer).",
+        },
+        {
+            "name": "configured",
+            "type": "BOOLEAN",
+            "description": "Whether a key (or, for SearXNG, a base_url) is currently present.",
+        },
+    ]
 )
 
 # Rows emitted per process tick. Deliberately small so a single page spans
@@ -311,7 +326,7 @@ class WebSearch(TableFunctionGenerator[WebSearchArgs, ScanState]):
                 ],
             ),
             "vgi.category": "Web Search",
-            "vgi.result_columns_md": _WEB_SEARCH_COLUMNS_MD,
+            "vgi.result_columns_schema": _WEB_SEARCH_COLUMNS_SCHEMA,
         }
         examples = [
             FunctionExample(
@@ -479,13 +494,17 @@ class SearchProviders(TableFunctionGenerator[_ProvidersArgs]):
                 ],
             ),
             "vgi.category": "Provider Discovery",
-            "vgi.result_columns_md": _PROVIDERS_COLUMNS_MD,
+            "vgi.result_columns_schema": _PROVIDERS_COLUMNS_SCHEMA,
             "vgi.executable_examples": EXECUTABLE_EXAMPLES,
         }
         examples = [
             FunctionExample(
-                sql="SELECT * FROM search.main.search_providers() ORDER BY provider",
-                description="Which providers are available and configured",
+                sql=(
+                    "SELECT provider, requires_key, configured "
+                    "FROM search.main.search_providers() "
+                    "WHERE configured ORDER BY provider"
+                ),
+                description="Providers that are ready to use right now, with their key requirement",
             ),
         ]
 
@@ -531,12 +550,8 @@ _PROVIDERS_TABLE_DOC_MD = (
     "A regular table view of the provider directory: one row per search provider this worker "
     "knows about, with whether each is ready to use. It scans the same data as the "
     "`search_providers()` function but reads as a plain table, so you can query "
-    "`search.main.search_providers` without parentheses.\n\n"
-    "## Usage\n\n"
-    "```sql\n"
-    "SELECT * FROM search.main.search_providers ORDER BY provider;\n"
-    "SELECT provider FROM search.main.search_providers WHERE configured;\n"
-    "```\n\n"
+    "`search.main.search_providers` without parentheses. Runnable, catalog-qualified queries live "
+    "in this object's examples.\n\n"
     "## Columns\n\n"
     "- `provider` -- provider name (the value to pass as `provider := ...` to `web_search`); "
     "primary key.\n"
@@ -553,8 +568,8 @@ _PROVIDERS_TABLE_DOC_MD = (
 _PROVIDERS_TABLE_EXAMPLE_QUERIES = json.dumps(
     [
         {
-            "description": "List every provider and whether each is configured.",
-            "sql": "SELECT * FROM search.main.search_providers ORDER BY provider",
+            "description": "Each provider with its key requirement and configured state, ordered by name.",
+            "sql": ("SELECT provider, requires_key, configured FROM search.main.search_providers ORDER BY provider"),
         },
         {
             "description": "Just the providers that are ready to use.",
@@ -596,5 +611,5 @@ PROVIDERS_TABLE_TAGS: dict[str, str] = {
     "topic": "search-providers",
     "vgi.category": "Provider Discovery",
     "vgi.example_queries": _PROVIDERS_TABLE_EXAMPLE_QUERIES,
-    "vgi.result_columns_md": _PROVIDERS_COLUMNS_MD,
+    "vgi.result_columns_schema": _PROVIDERS_COLUMNS_SCHEMA,
 }
