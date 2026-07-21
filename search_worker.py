@@ -1,7 +1,7 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
-#     "vgi-python[http]>=0.15.0",
+#     "vgi-python[http]>=0.16.0",
 #     "httpx>=0.27",
 # ]
 # ///
@@ -116,14 +116,35 @@ _SCHEMA_DESCRIPTION_MD = (
     "Keys are supplied via the VGI secret provider, never inline in SQL."
 )
 
-_SCHEMA_EXAMPLE_QUERIES = (
-    "SELECT provider, requires_key, configured FROM search.main.search_providers() ORDER BY provider;\n"
-    "SELECT title, url, rank FROM "
-    "search.main.web_search('python programming language', provider := 'ddg', count := 5) "
-    "ORDER BY rank;\n"
-    "SELECT title, url, snippet FROM "
-    "search.main.web_search('vector database', provider := 'brave', count := 10);\n"
-    "SELECT search.main.web_answer('python programming language', 'ddg') AS answer;"
+# VGI515/VGI506: schema-level illustrative examples as a described JSON list
+# ({"description","sql"}), catalog-qualified so they run against the attached
+# worker (VGI505).
+_SCHEMA_EXAMPLE_QUERIES = json.dumps(
+    [
+        {
+            "description": "List every provider and whether each is configured, before choosing one.",
+            "sql": "SELECT provider, requires_key, configured FROM search.main.search_providers() ORDER BY provider",
+        },
+        {
+            "description": "Top web results via the free, keyless DuckDuckGo provider.",
+            "sql": (
+                "SELECT title, url, rank FROM "
+                "search.main.web_search('python programming language', provider := 'ddg', count := 5) "
+                "ORDER BY rank"
+            ),
+        },
+        {
+            "description": "Top-10 web results via Brave (needs a key).",
+            "sql": (
+                "SELECT title, url, snippet FROM "
+                "search.main.web_search('vector database', provider := 'brave', count := 10)"
+            ),
+        },
+        {
+            "description": "A synthesized one-line answer via free DuckDuckGo Instant Answer.",
+            "sql": "SELECT search.main.web_answer('python programming language', 'ddg') AS answer",
+        },
+    ]
 )
 
 # VGI413: the schema's category registry. Each object declares a `vgi.category`

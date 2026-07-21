@@ -15,7 +15,12 @@
 # The worker command DuckDB runs for the `vgi` extension's ATTACH. The SQL E2E
 # uses the mock-wired launcher (starts the canned-response server, points every
 # provider's base_url at it) so the suite is deterministic and key-free.
-VGI_SEARCH_WORKER ?= uv run --python 3.13 scripts/mock_worker.py
+# Use the project venv's python (the same interpreter CI drives the E2E with),
+# NOT `uv run scripts/mock_worker.py`: the latter resolves the PEP 723 inline
+# header into a SEPARATE, cached script env that can pin a stale vgi-python and
+# emit an out-of-date catalog schema. Absolute paths ($(CURDIR)) because the
+# runner cd's into a staging dir before launching the worker.
+VGI_SEARCH_WORKER ?= $(CURDIR)/.venv/bin/python $(CURDIR)/scripts/mock_worker.py
 
 # haybarn-unittest is a uv tool; ~/.local/bin must be on PATH to find it.
 HAYBARN ?= haybarn-unittest

@@ -21,6 +21,28 @@ from __future__ import annotations
 
 import json
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from vgi.metadata import FunctionExample
+
+
+def example_queries_json(examples: Sequence[FunctionExample]) -> str:
+    """Serialize function examples as a described ``vgi.example_queries`` JSON list (VGI515).
+
+    The native ``duckdb_functions().examples`` carrier drops each example's
+    description, so every function must ALSO publish a ``vgi.example_queries``
+    tag: a JSON list of ``{"description", "sql"}`` objects. Building it from the
+    same :class:`~vgi.metadata.FunctionExample` list the function already
+    declares keeps the two byte-identical.
+
+    Args:
+        examples: The function's declared examples (each with ``sql`` + ``description``).
+
+    Returns:
+        A JSON array literal of ``{"description": ..., "sql": ...}`` objects.
+    """
+    return json.dumps([{"description": e.description, "sql": e.sql} for e in examples])
 
 
 def _keywords_json(keywords: Sequence[str]) -> str:

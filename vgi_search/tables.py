@@ -48,7 +48,7 @@ from vgi.table_function import (
 from vgi_rpc import ArrowSerializableDataclass
 from vgi_rpc.rpc import OutputCollector
 
-from vgi_search.meta import object_tags
+from vgi_search.meta import example_queries_json, object_tags
 from vgi_search.providers import DEFAULT_PROVIDER, ProviderError, build_provider, provider_info
 from vgi_search.result import Result
 from vgi_search.schema_utils import TIMESTAMPTZ, field
@@ -219,6 +219,38 @@ WEB_SEARCH_SCHEMA = pa.schema(
 _KEYED_PROVIDERS = ["brave", "tavily", "exa", "serpapi", "serper"]
 _KEYED_SECRETS = [SecretLookupEntry(secret_type=p) for p in _KEYED_PROVIDERS]
 
+# Illustrative examples (VGI306/VGI515). Declared once as module-level lists so
+# the native `Meta.examples` carrier AND the `vgi.example_queries` tag (which
+# preserves each description -- the native carrier drops it) stay byte-identical.
+_WEB_SEARCH_EXAMPLES = [
+    FunctionExample(
+        sql=(
+            "SELECT title, url, rank FROM "
+            "search.main.web_search('python programming language', provider := 'ddg', "
+            "count := 5) ORDER BY rank"
+        ),
+        description="Top web results via the free DuckDuckGo provider",
+    ),
+    FunctionExample(
+        sql=(
+            "SELECT title, url, snippet FROM "
+            "search.main.web_search('duckdb arrow protocol', provider := 'brave', count := 10)"
+        ),
+        description="Top-10 web results via Brave (needs a key)",
+    ),
+]
+
+_PROVIDERS_FN_EXAMPLES = [
+    FunctionExample(
+        sql=(
+            "SELECT provider, requires_key, configured "
+            "FROM search.main.search_providers() "
+            "WHERE configured ORDER BY provider"
+        ),
+        description="Providers that are ready to use right now, with their key requirement",
+    ),
+]
+
 
 @dataclass(slots=True, frozen=True, kw_only=True)
 class WebSearchArgs:
@@ -327,24 +359,10 @@ class WebSearch(TableFunctionGenerator[WebSearchArgs, ScanState]):
             ),
             "vgi.category": "Web Search",
             "vgi.result_columns_schema": _WEB_SEARCH_COLUMNS_SCHEMA,
+            # VGI515: mirror the native examples (with descriptions preserved).
+            "vgi.example_queries": example_queries_json(_WEB_SEARCH_EXAMPLES),
         }
-        examples = [
-            FunctionExample(
-                sql=(
-                    "SELECT title, url, rank FROM "
-                    "search.main.web_search('python programming language', provider := 'ddg', "
-                    "count := 5) ORDER BY rank"
-                ),
-                description="Top web results via the free DuckDuckGo provider",
-            ),
-            FunctionExample(
-                sql=(
-                    "SELECT title, url, snippet FROM "
-                    "search.main.web_search('duckdb arrow protocol', provider := 'brave', count := 10)"
-                ),
-                description="Top-10 web results via Brave (needs a key)",
-            ),
-        ]
+        examples = _WEB_SEARCH_EXAMPLES
 
     @classmethod
     def on_bind(cls, params: BindParams[WebSearchArgs]) -> BindResponse:
@@ -496,17 +514,10 @@ class SearchProviders(TableFunctionGenerator[_ProvidersArgs]):
             "vgi.category": "Provider Discovery",
             "vgi.result_columns_schema": _PROVIDERS_COLUMNS_SCHEMA,
             "vgi.executable_examples": EXECUTABLE_EXAMPLES,
+            # VGI515: mirror the native example (with its description preserved).
+            "vgi.example_queries": example_queries_json(_PROVIDERS_FN_EXAMPLES),
         }
-        examples = [
-            FunctionExample(
-                sql=(
-                    "SELECT provider, requires_key, configured "
-                    "FROM search.main.search_providers() "
-                    "WHERE configured ORDER BY provider"
-                ),
-                description="Providers that are ready to use right now, with their key requirement",
-            ),
-        ]
+        examples = _PROVIDERS_FN_EXAMPLES
 
     @classmethod
     def cardinality(cls, params: BindParams[_ProvidersArgs]) -> TableCardinality:

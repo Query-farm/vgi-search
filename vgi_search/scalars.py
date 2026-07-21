@@ -25,7 +25,7 @@ from vgi.arguments import ConstParam, Param, Returns, Secret
 from vgi.metadata import FunctionExample
 from vgi.scalar_function import ScalarFunction
 
-from vgi_search.meta import object_tags
+from vgi_search.meta import example_queries_json, object_tags
 from vgi_search.providers import ProviderError, build_provider
 from vgi_search.secrets import key_from_secret
 
@@ -64,6 +64,17 @@ _WEB_ANSWER_DOC_MD = (
     "- For ranked result rows (title/url/snippet/...) use the `web_search` table function."
 )
 
+_WEB_ANSWER_EXAMPLES = [
+    FunctionExample(
+        sql="SELECT search.main.web_answer('python programming language', 'ddg')",
+        description="DuckDuckGo Instant Answer (free, no key)",
+    ),
+    FunctionExample(
+        sql="SELECT search.main.web_answer('who maintains duckdb', 'tavily')",
+        description="Tavily-synthesized answer (needs a key)",
+    ),
+]
+
 
 class WebAnswer(ScalarFunction):
     """``web_answer(query, provider)`` -> synthesized answer string (or NULL)."""
@@ -96,17 +107,13 @@ class WebAnswer(ScalarFunction):
                 ],
             ),
             "vgi.category": "Web Search",
+            # VGI515: DuckDB's native duckdb_functions().examples carrier drops
+            # each example's description, so publish the same examples (with
+            # descriptions) as a vgi.example_queries JSON list. Built from the
+            # same _WEB_ANSWER_EXAMPLES list so the two stay byte-identical.
+            "vgi.example_queries": example_queries_json(_WEB_ANSWER_EXAMPLES),
         }
-        examples = [
-            FunctionExample(
-                sql="SELECT search.main.web_answer('python programming language', 'ddg')",
-                description="DuckDuckGo Instant Answer (free, no key)",
-            ),
-            FunctionExample(
-                sql="SELECT search.main.web_answer('who maintains duckdb', 'tavily')",
-                description="Tavily-synthesized answer (needs a key)",
-            ),
-        ]
+        examples = _WEB_ANSWER_EXAMPLES
 
     @classmethod
     def compute(
