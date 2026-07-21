@@ -69,9 +69,25 @@ jobs:
         chmod +x "$HB"
         echo "::endgroup::"
 
+        # Stage the transport-agnostic .test through this repo's preprocessor,
+        # which injects the signed `INSTALL vgi FROM community;` before the bare
+        # `LOAD vgi;` so a clean runner (haybarn links no extensions) can resolve
+        # vgi. The http leg additionally needs httpfs (the vgi HTTP transport is
+        # layered on it); without httpfs the ATTACH errors "...HTTP..." and
+        # haybarn silently SKIPs the file — hence the assert_passed guard.
+        mkdir -p stage_stdio/test/sql stage_http/test/sql
+        awk -f ci/preprocess-require.awk test/sql/providers.test > stage_stdio/test/sql/providers.test
+        awk '
+          { print }
+          /^[ \t]*LOAD[ \t]+vgi[ \t]*;[ \t]*$/ && !done {
+            print ""; print "statement ok"; print "INSTALL httpfs FROM core;";
+            print ""; print "statement ok"; print "LOAD httpfs;"; done = 1
+          }
+        ' stage_stdio/test/sql/providers.test > stage_http/test/sql/providers.test
+
         echo "::group::stdio entrypoint smoke (providers directory, one cold container)"
         VGI_SEARCH_WORKER="docker run -i --rm -e BRAVE_API_KEY=x -e TAVILY_API_KEY=x -e EXA_API_KEY=x $CITEST_IMAGE stdio" \
-          "$HB" --test-dir . "test/sql/providers.test" 2>&1 | tee stdio.out
+          "$HB" --test-dir stage_stdio "test/sql/providers.test" 2>&1 | tee stdio.out
         assert_passed stdio.out
         echo "::endgroup::"
 
@@ -79,20 +95,8 @@ jobs:
         CID=$(docker run -d -p 18000:8000 -e BRAVE_API_KEY=x -e TAVILY_API_KEY=x -e EXA_API_KEY=x "$CITEST_IMAGE")
         trap 'docker rm -f "$CID" >/dev/null 2>&1 || true' EXIT
         for _ in $(seq 1 30); do curl -fsS -o /dev/null http://localhost:18000/health && break; sleep 1; done
-        # The vgi HTTP-transport ATTACH is layered on DuckDB httpfs; without it the
-        # ATTACH errors with "...HTTP..." and haybarn SKIPs the whole file. Stage
-        # providers.test with an httpfs load injected right after `LOAD vgi;`
-        # (mirrors ci/run-integration.sh), so the HTTP leg really runs.
-        mkdir -p stage/test/sql
-        awk '
-          { print }
-          /^LOAD[ \t]+vgi[ \t]*;[ \t]*$/ && !done {
-            print ""; print "statement ok"; print "INSTALL httpfs FROM core;";
-            print ""; print "statement ok"; print "LOAD httpfs;"; done = 1
-          }
-        ' test/sql/providers.test > stage/test/sql/providers.test
         VGI_SEARCH_WORKER="http://localhost:18000" \
-          "$HB" --test-dir stage "test/sql/providers.test" 2>&1 | tee http.out
+          "$HB" --test-dir stage_http "test/sql/providers.test" 2>&1 | tee http.out
         assert_passed http.out
         docker rm -f "$CID" >/dev/null 2>&1 || true
         echo "::endgroup::"
