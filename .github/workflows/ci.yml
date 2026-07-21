@@ -16,6 +16,9 @@ on:
     branches: [main]
     paths-ignore: ['README.md']
   workflow_dispatch:
+  # Invoked as a gate by docker-publish.yml and release.yml (both do
+  # `uses: ./.github/workflows/ci.yml`); without this they fail at 0s.
+  workflow_call:
 
 permissions:
   contents: read

@@ -48,6 +48,16 @@ dev = [
 http = [
     "vgi-python[http]>=0.16.0",
 ]
+# HTTP-serving extra installed by the Docker image (`pip install '.[serve]'`).
+# Alias of `http` — same waitress-backed HTTP transport, named to match the
+# fleet-wide container convention (`vgi-serve ... --http`).
+serve = [
+    "vgi-python[http]>=0.16.0",
+]
+
+[project.scripts]
+# Console entry the container's stdio transport and bin/vgi-search-worker exec.
+vgi-search-worker = "vgi_search.worker:main"
 
 [project.urls]
 Homepage = "https://query.farm"
@@ -79,6 +89,9 @@ select = ["E", "F", "I", "UP", "B", "SIM", "D"]
 # The PEP 723 inline-script headers wrap dependency pins that should stay one-per-line.
 "search_worker.py" = ["E501"]
 "serve.py" = ["E501"]
+# The worker module keeps a few metadata/agent-task strings (JSON blobs, prompts)
+# on one line for readability; wrapping them would fragment the literals.
+"vgi_search/worker.py" = ["E501"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
