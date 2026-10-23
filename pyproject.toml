@@ -29,7 +29,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "vgi-python>=0.30.0",
+    "vgi-python>=0.46.1",
     "httpx>=0.27",
     "pyarrow",
 ]
@@ -39,6 +39,7 @@ dev = [
     "pytest>=8",
     "ruff>=0.6",
     "mypy>=1.10",
+    "pyarrow-stubs",
     "pydoclint>=0.5",
 ]
 # HTTP transport: the worker can serve over HTTP (`search_worker.py --http`, and
@@ -46,13 +47,13 @@ dev = [
 # stdio/AF_UNIX. That path needs vgi-python's `http` extra (waitress). CI's http
 # transport leg installs this via `uv sync --extra http`.
 http = [
-    "vgi-python[http]>=0.30.0",
+    "vgi-python[http]>=0.46.1",
 ]
 # HTTP-serving extra installed by the Docker image (`pip install '.[serve]'`).
 # Alias of `http` — same waitress-backed HTTP transport, named to match the
 # fleet-wide container convention (`vgi-serve ... --http`).
 serve = [
-    "vgi-python[http]>=0.30.0",
+    "vgi-python[http]>=0.46.1",
 ]
 
 [project.scripts]

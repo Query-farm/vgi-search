@@ -162,9 +162,11 @@ _SCHEMA_CATEGORIES = json.dumps(
 )
 
 # VGI152: an analyst-task suite so `vgi-lint simulate` can measure how well an
-# agent actually uses this worker. Every reference query uses the keyless `ddg`
-# provider or the backend-free `search_providers()` directory, so the suite runs
-# without any API key or paid subscription.
+# agent actually uses this worker. Only task names and prompts are published here
+# (VGI416); the grader-only reference queries live in vgi-agent-tests.yaml at the
+# repo root. Every reference query uses the keyless `ddg` provider or the
+# backend-free `search_providers()` directory, so the suite runs without any API
+# key or paid subscription.
 _AGENT_TEST_TASKS = json.dumps(
     [
         {
@@ -173,37 +175,24 @@ _AGENT_TEST_TASKS = json.dumps(
                 "Show me the full directory of search providers this worker supports: every provider, "
                 "with all of its columns, ordered by provider name."
             ),
-            "reference_sql": "SELECT * FROM search.main.search_providers() ORDER BY provider",
         },
         {
             "name": "keyed-providers",
             "prompt": "Which of the search providers require an API key? List just their names, sorted.",
-            "reference_sql": (
-                "SELECT provider FROM search.main.search_providers() WHERE requires_key ORDER BY provider"
-            ),
         },
         {
             "name": "answer-capable-providers",
             "prompt": "Which providers can return a synthesized one-line answer for web_answer? List their names, sorted.",
-            "reference_sql": (
-                "SELECT provider FROM search.main.search_providers() WHERE supports_answer ORDER BY provider"
-            ),
         },
         {
             "name": "ready-to-use-providers",
             "prompt": "List the names of the search providers that are configured and ready to use right now, sorted.",
-            "reference_sql": ("SELECT provider FROM search.main.search_providers() WHERE configured ORDER BY provider"),
         },
         {
             "name": "free-web-search",
             "prompt": (
                 "Using the free, keyless DuckDuckGo (ddg) provider, search for 'python programming "
                 "language' and return the titles and URLs of the top 5 results ordered by rank."
-            ),
-            "reference_sql": (
-                "SELECT title, url FROM "
-                "search.main.web_search('python programming language', provider := 'ddg', count := 5) "
-                "ORDER BY rank LIMIT 5"
             ),
         },
         {
@@ -212,7 +201,6 @@ _AGENT_TEST_TASKS = json.dumps(
                 "Get a single synthesized one-line answer for 'python programming language' using the "
                 "free DuckDuckGo (ddg) provider, without any API key."
             ),
-            "reference_sql": "SELECT search.main.web_answer('python programming language', 'ddg') AS answer",
         },
     ]
 )
@@ -255,7 +243,7 @@ _SEARCH_CATALOG = Catalog(
     },
     schemas=[
         Schema(
-            name="main",
+            path=["main"],
             comment="Unified web search over pluggable providers for SQL / RAG",
             tags={
                 "vgi.title": "Web Search — main",

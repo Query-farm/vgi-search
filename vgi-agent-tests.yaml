@@ -1,0 +1,16 @@
+# Private graders for `vgi-lint simulate` (VGI416). The worker publishes only
+# task names and prompts in vgi.agent_test_tasks; these canonical solutions and
+# grading options stay in the repo and are merged by task name.
+tasks:
+  - name: provider-directory
+    reference_sql: "SELECT * FROM search.main.search_providers() ORDER BY provider"
+  - name: keyed-providers
+    reference_sql: "SELECT provider FROM search.main.search_providers() WHERE requires_key ORDER BY provider"
+  - name: answer-capable-providers
+    reference_sql: "SELECT provider FROM search.main.search_providers() WHERE supports_answer ORDER BY provider"
+  - name: ready-to-use-providers
+    reference_sql: "SELECT provider FROM search.main.search_providers() WHERE configured ORDER BY provider"
+  - name: free-web-search
+    reference_sql: "SELECT title, url FROM search.main.web_search('python programming language', provider := 'ddg', count := 5) ORDER BY rank LIMIT 5"
+  - name: keyless-one-line-answer
+    reference_sql: "SELECT search.main.web_answer('python programming language', 'ddg') AS answer"
