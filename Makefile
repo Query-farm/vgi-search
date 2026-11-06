@@ -23,6 +23,9 @@
 VGI_SEARCH_WORKER ?= $(CURDIR)/.venv/bin/python $(CURDIR)/scripts/mock_worker.py
 
 # haybarn-unittest is a uv tool; ~/.local/bin must be on PATH to find it.
+# haybarn 2.0 is required: its community `vgi` extension is the one that speaks the
+# worker's VGI protocol (vgi.v3 / 3.1). --keep-home lets the runner see the
+# extensions installed under the real $HOME (haybarn-unittest 2.0 isolates it).
 HAYBARN ?= haybarn-unittest
 LOCAL_BIN := $(HOME)/.local/bin
 
@@ -47,7 +50,7 @@ test-live:
 ensure-haybarn:
 	@if ! PATH="$(LOCAL_BIN):$$PATH" command -v $(HAYBARN) >/dev/null 2>&1; then \
 		echo "Installing haybarn-unittest..."; \
-		uv tool install 'haybarn-unittest<2'; \
+		uv tool install --prerelease allow 'haybarn-unittest>=2.0.0rc11,<2.1'; \
 	fi
 
 # End-to-end SQL tests: load `vgi`, ATTACH the worker, run the .test glob.
@@ -55,7 +58,7 @@ ensure-haybarn:
 # explicit `LOAD vgi;` instead.
 test-sql: ensure-haybarn
 	PATH="$(LOCAL_BIN):$$PATH" VGI_SEARCH_WORKER="$(VGI_SEARCH_WORKER)" \
-		$(HAYBARN) --test-dir "$(TEST_DIR)" "$(TEST_PATTERN)"
+		$(HAYBARN) --keep-home --test-dir "$(TEST_DIR)" "$(TEST_PATTERN)"
 
 lint:
 	uv run --no-sync ruff check .

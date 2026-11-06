@@ -30,7 +30,7 @@ from __future__ import annotations
 import json
 
 from vgi import Worker
-from vgi.catalog import Catalog, Schema, Table
+from vgi.catalog import Catalog, ConstraintInfo, Schema, Table, constraint_record
 
 from vgi_search.scalars import SCALAR_FUNCTIONS
 from vgi_search.tables import PROVIDERS_TABLE_TAGS, TABLE_FUNCTIONS, SearchProviders
@@ -205,6 +205,27 @@ _AGENT_TEST_TASKS = json.dumps(
     ]
 )
 
+
+def _trusted(table: str, constraint_id: str, kind: str, columns: list[list[str]]) -> ConstraintInfo:
+    """Build an ENFORCED + ALL_ROWS constraint record on a ``main``-schema table.
+
+    DuckDB only accepts trusted (ENFORCED, ALL_ROWS) records, and every row the
+    worker serves satisfies them.
+
+    Args:
+        table: Name of the table the constraint belongs to.
+        constraint_id: Identifier unique within the table.
+        kind: Constraint kind (``PRIMARY_KEY``, ``NOT_NULL``, ...).
+        columns: Column paths the constraint covers, e.g. ``[["provider"]]``.
+
+    Returns:
+        The canonical constraint record.
+    """
+    return constraint_record(
+        ["main"], table, constraint_id, kind, columns, enforcement="ENFORCED", validation="ALL_ROWS"
+    )
+
+
 _SEARCH_CATALOG = Catalog(
     name="search",
     default_schema="main",
@@ -286,8 +307,13 @@ _SEARCH_CATALOG = Catalog(
                     comment="Directory of available search providers and whether each is configured",
                     # Every provider row is fully populated, and the provider name
                     # uniquely identifies a row (VGI806/VGI807 constraints).
-                    primary_key=(("provider",),),
-                    not_null=("provider", "requires_key", "supports_answer", "configured"),
+                    constraints=(
+                        _trusted("search_providers", "pk", "PRIMARY_KEY", [["provider"]]),
+                        _trusted("search_providers", "provider_not_null", "NOT_NULL", [["provider"]]),
+                        _trusted("search_providers", "requires_key_not_null", "NOT_NULL", [["requires_key"]]),
+                        _trusted("search_providers", "supports_answer_not_null", "NOT_NULL", [["supports_answer"]]),
+                        _trusted("search_providers", "configured_not_null", "NOT_NULL", [["configured"]]),
+                    ),
                     tags=PROVIDERS_TABLE_TAGS,
                 ),
             ],
