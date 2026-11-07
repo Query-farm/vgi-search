@@ -15,6 +15,34 @@ from __future__ import annotations
 
 from typing import Any
 
+import pyarrow as pa
+from vgi.catalog.secret_type import SecretTypeSpec
+
+#: Keyed providers -> human label. Each gets its own VGI secret type so one
+#: ``CREATE SECRET (TYPE brave, api_key ...)`` configures that backend.
+KEYED_PROVIDER_LABELS: dict[str, str] = {
+    "brave": "Brave Search API",
+    "tavily": "Tavily Search API",
+    "exa": "Exa Search API",
+    "serpapi": "SerpApi (opt-in; requires VGI_SEARCH_ENABLE_SERP=1)",
+    "serper": "Serper.dev (opt-in; requires VGI_SEARCH_ENABLE_SERP=1)",
+}
+
+#: The secret types advertised in the catalog (``Worker.secret_types``). All are
+#: optional: ``ddg`` and ``searxng`` work keyless, and each keyed provider also
+#: falls back to its ``<PROVIDER>_API_KEY`` environment variable.
+SECRET_TYPES: list[SecretTypeSpec] = [
+    SecretTypeSpec(
+        name=name,
+        description=(
+            f"Optional {label} key for web_search(provider := {name}) / web_answer. "
+            f"Falls back to the {name.upper()}_API_KEY environment variable."
+        ),
+        schema=pa.schema([pa.field("api_key", pa.string(), metadata={"redact": "true"})]),
+    )
+    for name, label in KEYED_PROVIDER_LABELS.items()
+]
+
 _KEY_FIELDS = ("api_key", "key", "token", "value", "secret", "secret_string")
 
 
@@ -26,6 +54,13 @@ def key_from_secret(secrets: dict[str, dict[str, Any]], provider: str) -> str | 
     secret type named after the provider and reads the first present key field.
     """
     entry = secrets.get(provider)
+    if not entry:
+        # The connector keys resolved secrets by their DuckDB secret *name*
+        # (``__default_brave`` for an unnamed ``CREATE SECRET (TYPE brave, ...)``),
+        # so select by the secret's ``type`` field when the name differs.
+        of_type = getattr(secrets, "of_type", None)
+        matches = of_type(provider) if callable(of_type) else []
+        entry = matches[0] if matches else None
     if not entry:
         return None
     for fieldname in _KEY_FIELDS:

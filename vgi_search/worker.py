@@ -33,6 +33,7 @@ from vgi import Worker
 from vgi.catalog import Catalog, ConstraintInfo, Schema, Table, constraint_record
 
 from vgi_search.scalars import SCALAR_FUNCTIONS
+from vgi_search.secrets import SECRET_TYPES
 from vgi_search.tables import PROVIDERS_TABLE_TAGS, TABLE_FUNCTIONS, SearchProviders
 
 _CATALOG_DESCRIPTION_LLM = (
@@ -326,6 +327,7 @@ class SearchWorker(Worker):
     """Worker process hosting the ``search`` catalog."""
 
     catalog = _SEARCH_CATALOG
+    secret_types = SECRET_TYPES
 
 
 def main() -> None:

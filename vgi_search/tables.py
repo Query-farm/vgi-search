@@ -52,7 +52,7 @@ from vgi_search.meta import example_queries_json, object_tags
 from vgi_search.providers import DEFAULT_PROVIDER, ProviderError, build_provider, provider_info
 from vgi_search.result import Result
 from vgi_search.schema_utils import TIMESTAMPTZ, field
-from vgi_search.secrets import key_from_secret
+from vgi_search.secrets import KEYED_PROVIDER_LABELS, key_from_secret
 
 _WEB_SEARCH_DOC_LLM = (
     "Run one web search against a pluggable provider and stream a unified, ranked result set as a "
@@ -216,7 +216,7 @@ WEB_SEARCH_SCHEMA = pa.schema(
 
 # Provider keys are declared as VGI secret types so the catalog advertises them;
 # they resolve through the secret provider (env-var fallback handled downstream).
-_KEYED_PROVIDERS = ["brave", "tavily", "exa", "serpapi", "serper"]
+_KEYED_PROVIDERS = list(KEYED_PROVIDER_LABELS)
 _KEYED_SECRETS = [SecretLookupEntry(secret_type=p) for p in _KEYED_PROVIDERS]
 
 # Illustrative examples (VGI306/VGI515). Declared once as module-level lists so
