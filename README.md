@@ -19,7 +19,7 @@ It completes the AI/RAG retrieval stack alongside
 
 ```sql
 INSTALL vgi FROM community; LOAD vgi;
-ATTACH 'search' (TYPE vgi, LOCATION 'uv run search_worker.py');
+ATTACH 'search' (TYPE vgi, LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-search@v0.2.1 vgi-search-worker');
 
 -- Top-N web search via the configured/default provider.
 SELECT title, url, snippet, rank, source, published
@@ -35,6 +35,41 @@ SELECT search.web_answer('python programming language', 'ddg');
 -- Which providers are available and configured?
 SELECT * FROM search.search_providers() ORDER BY provider;
 ```
+
+## Quick start
+
+The worker isn't on PyPI; [uv](https://docs.astral.sh/uv/) runs it straight from a tagged release on GitHub. `uvx` builds an isolated environment on the first ATTACH and reuses it afterwards:
+
+```sql
+INSTALL vgi FROM community;
+LOAD vgi;
+
+ATTACH 'search' AS search (TYPE vgi, LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-search@v0.2.1 vgi-search-worker');
+
+-- List every provider and whether each is configured, before choosing one.
+SELECT provider, requires_key, configured FROM search.main.search_providers() ORDER BY provider;
+
+-- Top web results via the free, keyless DuckDuckGo provider.
+SELECT title, url, rank FROM search.main.web_search('python programming language', provider := 'ddg', count := 5) ORDER BY rank;
+```
+
+DuckDuckGo needs no key; the other providers (`brave`, `tavily`, `exa`, `serpapi`, `serper`) each need a secret of that type, created after the ATTACH. See [Authentication](#authentication--the-secret-provider). Queries need network access.
+
+Change `@v0.2.1` to move to a newer release.
+
+### Other ways to run it
+
+- **Docker** (the image bundles the worker and its dependencies):
+
+  ```sql
+  ATTACH 'search' AS search (TYPE vgi, LOCATION 'docker://ghcr.io/query-farm/vgi-search:0.2.1');
+  ```
+
+- **From a local checkout** (`git clone https://github.com/Query-farm/vgi-search`), point `LOCATION` at `uv run --project /path/to/vgi-search vgi-search-worker`.
+
+### Build from source
+
+To build and test the worker yourself, see [Development](#development).
 
 ## Honest framing (read this)
 
