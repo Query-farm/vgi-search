@@ -1,6 +1,6 @@
 [project]
 name = "vgi-search"
-version = "0.2.1"
+version = "0.3.0"
 description = "Unified web search as VGI DuckDB SQL functions, behind one pluggable provider surface (for RAG / retrieval)"
 readme = "README.md"
 requires-python = ">=3.13"
