@@ -234,6 +234,9 @@ _SEARCH_CATALOG = Catalog(
     source_url="https://github.com/Query-farm/vgi-search",
     tags={
         "vgi.title": "Unified Web Search",
+        "vgi.subtitle": (
+            "Query Brave, Tavily, Exa, SearXNG, DuckDuckGo, SerpAPI and Serper web search from SQL through one interface."
+        ),
         "vgi.keywords": json.dumps(
             [
                 "web search",
@@ -268,7 +271,7 @@ _SEARCH_CATALOG = Catalog(
             path=["main"],
             comment="Unified web search over pluggable providers for SQL / RAG",
             tags={
-                "vgi.title": "Web Search — main",
+                "vgi.title": "Web Search",
                 "vgi.keywords": json.dumps(
                     [
                         "web search",

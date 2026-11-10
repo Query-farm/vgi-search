@@ -594,7 +594,7 @@ _PROVIDERS_TABLE_EXAMPLE_QUERIES = json.dumps(
 )
 
 PROVIDERS_TABLE_TAGS: dict[str, str] = {
-    "vgi.title": "Search Provider Directory (table)",
+    "vgi.title": "Provider Directory",
     "vgi.doc_llm": _PROVIDERS_DOC_LLM,
     "vgi.doc_md": _PROVIDERS_TABLE_DOC_MD,
     "vgi.keywords": json.dumps(
