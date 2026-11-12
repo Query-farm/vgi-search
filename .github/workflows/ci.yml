@@ -34,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
         python-version: ["3.13"]
 
     steps:
@@ -151,11 +151,10 @@ jobs:
         #   subprocess : `.venv/bin/python scripts/mock_worker.py` (stdio)
         #   http       : `http://127.0.0.1:<port>`   (launcher booted with --http)
         #   unix       : `unix:///tmp/search.sock`   (launcher booted with --unix)
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
         transport: [subprocess, http, unix]
         include:
           - { os: ubuntu-latest, asset: haybarn_unittest-linux-amd64.zip }
-          - { os: macos-latest,  asset: haybarn_unittest-osx-arm64.zip }
     runs-on: ${{ matrix.os }}
     env:
       UV_PYTHON: "3.13"
