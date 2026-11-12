@@ -89,23 +89,21 @@ _CATALOG_DESCRIPTION_MD = (
 )
 
 _SCHEMA_DESCRIPTION_LLM = (
-    "Web-search functions over a pluggable provider surface.\n\n"
-    "- `web_search(query, provider := ..., count := ..., page := ...)` -- table function returning "
-    "ranked results in a unified schema (title, url, snippet, rank, source, published, score, "
-    "extra JSON).\n"
-    "- `web_answer(query, provider)` -- scalar returning a synthesized one-line answer, or NULL.\n"
-    "- `search_providers()` -- table function listing the providers and which are configured.\n\n"
+    "Live web search over a pluggable provider surface, for RAG / retrieval that needs fresh web "
+    "results. Ranked hits come back in one unified schema (title, url, snippet, rank, source, "
+    "published, score, extra JSON) whichever backend answers, and some providers can also return a "
+    "synthesized one-line answer. A provider directory reports which backends exist, what each "
+    "supports, and whether its key is configured, so check it before choosing a provider.\n\n"
     "Backed by Brave, Tavily, Exa, SearXNG, DuckDuckGo, and the opt-in SerpApi/Serper scrapers. "
-    "Provider keys come from the VGI secret provider, never from SQL; `ddg` works for free. Use "
-    "these for RAG / retrieval that needs live web results."
+    "Provider keys come from the VGI secret provider, never from SQL; `ddg` works for free."
 )
 
 _SCHEMA_DESCRIPTION_MD = (
     "# search.main\n\n"
-    "Web-search functions over a **pluggable provider surface**, for RAG / retrieval.\n\n"
-    "- `web_search` -- ranked results as a table (unified schema across providers).\n"
-    "- `web_answer` -- a synthesized one-line answer (scalar), or NULL.\n"
-    "- `search_providers` -- provider discovery (names, capabilities, configured state).\n\n"
+    "Live web search over a **pluggable provider surface**, for RAG / retrieval. Results share one "
+    "unified, ranked schema across providers; providers that support it can also return a "
+    "synthesized one-line answer, and a provider directory shows which backends are available and "
+    "configured.\n\n"
     "Providers: Brave, Tavily, Exa, SearXNG, DuckDuckGo (free), plus opt-in SerpApi/Serper. "
     "Keys are supplied via the VGI secret provider, never inline in SQL."
 )

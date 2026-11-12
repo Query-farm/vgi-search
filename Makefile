@@ -24,7 +24,7 @@ VGI_SEARCH_WORKER ?= $(CURDIR)/.venv/bin/python $(CURDIR)/scripts/mock_worker.py
 
 # haybarn-unittest is a uv tool; ~/.local/bin must be on PATH to find it.
 # haybarn 2.0 is required: its community `vgi` extension is the one that speaks the
-# worker's VGI protocol (vgi.v3 / 3.2). --keep-home lets the runner see the
+# worker's VGI protocol (vgi.v3 / 3.3). --keep-home lets the runner see the
 # extensions installed under the real $HOME (haybarn-unittest 2.0 isolates it).
 HAYBARN ?= haybarn-unittest
 LOCAL_BIN := $(HOME)/.local/bin

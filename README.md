@@ -19,7 +19,7 @@ It completes the AI/RAG retrieval stack alongside
 
 ```sql
 INSTALL vgi FROM community; LOAD vgi;
-ATTACH 'search' (TYPE vgi, LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-search@v0.3.0 vgi-search-worker');
+ATTACH 'search' (TYPE vgi, LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-search@v0.4.0 vgi-search-worker');
 
 -- Top-N web search via the configured/default provider.
 SELECT title, url, snippet, rank, source, published
@@ -44,7 +44,7 @@ The worker isn't on PyPI; [uv](https://docs.astral.sh/uv/) runs it straight from
 INSTALL vgi FROM community;
 LOAD vgi;
 
-ATTACH 'search' AS search (TYPE vgi, LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-search@v0.3.0 vgi-search-worker');
+ATTACH 'search' AS search (TYPE vgi, LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-search@v0.4.0 vgi-search-worker');
 
 -- List every provider and whether each is configured, before choosing one.
 SELECT provider, requires_key, configured FROM search.main.search_providers() ORDER BY provider;
@@ -55,14 +55,14 @@ SELECT title, url, rank FROM search.main.web_search('python programming language
 
 DuckDuckGo needs no key; the other providers (`brave`, `tavily`, `exa`, `serpapi`, `serper`) each need a secret of that type, created after the ATTACH. See [Authentication](#authentication--the-secret-provider). Queries need network access.
 
-Change `@v0.3.0` to move to a newer release.
+Change `@v0.4.0` to move to a newer release.
 
 ### Other ways to run it
 
 - **Docker** (the image bundles the worker and its dependencies):
 
   ```sql
-  ATTACH 'search' AS search (TYPE vgi, LOCATION 'docker://ghcr.io/query-farm/vgi-search:0.3.0');
+  ATTACH 'search' AS search (TYPE vgi, LOCATION 'docker://ghcr.io/query-farm/vgi-search:0.4.0');
   ```
 
 - **From a local checkout** (`git clone https://github.com/Query-farm/vgi-search`), point `LOCATION` at `uv run --project /path/to/vgi-search vgi-search-worker`.

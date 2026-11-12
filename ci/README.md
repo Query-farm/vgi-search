@@ -14,7 +14,7 @@ extension from the Haybarn community channel:
 1. **Install the worker** — `uv sync --frozen --extra http` into a venv.
 2. **Download the runner** — the newest `haybarn-v2.0.*` release (haybarn 2.0's
    community `vgi` extension is the one that speaks the worker's VGI protocol,
-   vgi.v3 / 3.2), the matching `haybarn_unittest-*` asset per platform.
+   vgi.v3 / 3.3), the matching `haybarn_unittest-*` asset per platform.
 3. **Preprocess** — [`preprocess-require.awk`](preprocess-require.awk) rewrites
    each `require <ext>` into an explicit signed `INSTALL <ext> FROM
    {community,core}; LOAD <ext>;`, and injects `INSTALL vgi FROM community;`

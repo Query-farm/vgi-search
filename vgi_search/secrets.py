@@ -28,6 +28,16 @@ KEYED_PROVIDER_LABELS: dict[str, str] = {
     "serper": "Serper.dev (opt-in; requires VGI_SEARCH_ENABLE_SERP=1)",
 }
 
+#: Keyed providers -> the page where a user obtains that provider's API key
+#: (advertised as the secret schema's ``vgi_doc_url``, VGI1012).
+KEYED_PROVIDER_KEY_URLS: dict[str, str] = {
+    "brave": "https://brave.com/search/api/",
+    "tavily": "https://app.tavily.com/",
+    "exa": "https://dashboard.exa.ai/api-keys",
+    "serpapi": "https://serpapi.com/manage-api-key",
+    "serper": "https://serper.dev/api-key",
+}
+
 #: The secret types advertised in the catalog (``Worker.secret_types``). All are
 #: optional: ``ddg`` and ``searxng`` work keyless, and each keyed provider also
 #: falls back to its ``<PROVIDER>_API_KEY`` environment variable.
@@ -38,7 +48,19 @@ SECRET_TYPES: list[SecretTypeSpec] = [
             f"Optional {label} key for web_search(provider := {name}) / web_answer. "
             f"Falls back to the {name.upper()}_API_KEY environment variable."
         ),
-        schema=pa.schema([pa.field("api_key", pa.string(), metadata={"redact": "true"})]),
+        schema=pa.schema(
+            [
+                pa.field(
+                    "api_key",
+                    pa.string(),
+                    metadata={
+                        "redact": "true",
+                        "vgi_doc": f"{label} key, issued from your account at {KEYED_PROVIDER_KEY_URLS[name]}",
+                    },
+                )
+            ],
+            metadata={"vgi_doc_url": KEYED_PROVIDER_KEY_URLS[name]},
+        ),
     )
     for name, label in KEYED_PROVIDER_LABELS.items()
 ]
