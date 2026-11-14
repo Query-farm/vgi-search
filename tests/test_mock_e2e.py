@@ -102,3 +102,25 @@ def test_retry_exhausted_raises() -> None:
         p = BraveProvider(api_key="k", base_url=srv.base)
         with pytest.raises(ProviderError):
             p.request_with_retry("GET", f"{srv.base}/flaky")
+
+
+def test_ddg_non_json_body_raises_clean() -> None:
+    # DuckDuckGo answers a throttled client with an empty body; that must surface
+    # as a ProviderError naming the cause, not a bare JSONDecodeError.
+    import httpx
+
+    client = httpx.Client(transport=httpx.MockTransport(lambda _req: httpx.Response(202, content=b"")))
+    p = build_provider("ddg", base_url="http://ddg.invalid", client=client)
+    with pytest.raises(ProviderError, match="non-JSON response"):
+        p.search("python", count=5, offset=0, opts={})
+
+
+def test_requests_send_identifying_user_agent(server) -> None:
+    # DuckDuckGo throttles the default python-httpx User-Agent (empty body), so
+    # every provider call must identify itself as vgi-search.
+    from vgi_search.providers.base import USER_AGENT
+
+    p = build_provider("ddg", base_url=server.base)
+    with p._http() as client:
+        assert client.headers["User-Agent"] == USER_AGENT
+    assert USER_AGENT.startswith("vgi-search/")

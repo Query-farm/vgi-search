@@ -26,6 +26,7 @@ from typing import Any, Protocol, runtime_checkable
 
 import httpx
 
+from vgi_search import __version__
 from vgi_search.result import Result
 
 DEFAULT_TIMEOUT = 15.0
@@ -36,6 +37,10 @@ MAX_RETRIES = 3
 
 RETRY_STATUS = frozenset({429, 500, 502, 503, 504})
 """HTTP statuses that warrant a bounded retry with backoff."""
+
+USER_AGENT = f"vgi-search/{__version__} (+https://github.com/Query-farm/vgi-search)"
+"""Identifying User-Agent sent on every provider call. DuckDuckGo's Instant Answer
+endpoint throttles the default ``python-httpx`` agent (HTTP 200, empty body)."""
 
 BACKOFF_BASE = 0.25
 """Base seconds for exponential backoff (0.25, 0.5, 1.0, ...)."""
@@ -117,7 +122,7 @@ class BaseProvider:
     def _http(self) -> httpx.Client:
         if self._client is not None:
             return self._client
-        return httpx.Client(timeout=self.timeout)
+        return httpx.Client(timeout=self.timeout, headers={"User-Agent": USER_AGENT})
 
     def request_with_retry(
         self,

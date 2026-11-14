@@ -14,3 +14,10 @@ tasks:
     reference_sql: "SELECT title, url FROM search.main.web_search('python programming language', provider := 'ddg', count := 5) ORDER BY rank LIMIT 5"
   - name: keyless-one-line-answer
     reference_sql: "SELECT search.main.web_answer('python programming language', 'ddg') AS answer"
+  # Composed (web_search + web_answer) on live DuckDuckGo data, so no exact-compare
+  # reference: the prompt pins a temp view, and check_sql recomputes the live count
+  # and fails on any other answer (or a missing / multi-row view).
+  - name: sqlite-titles-with-definitions
+    check_sql: >-
+      SELECT count(*) = 1 AND min(n) = (SELECT count(*) FROM search.main.web_search('sqlite', provider := 'ddg', count := 6)
+      WHERE search.main.web_answer(title, 'ddg') IS NOT NULL) FROM sqlite_defined_titles

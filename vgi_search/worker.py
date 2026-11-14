@@ -32,6 +32,7 @@ import json
 from vgi import Worker
 from vgi.catalog import Catalog, ConstraintInfo, Schema, Table, constraint_record
 
+from vgi_search.examples import COMPOSED_EXAMPLES
 from vgi_search.scalars import SCALAR_FUNCTIONS
 from vgi_search.secrets import SECRET_TYPES
 from vgi_search.tables import PROVIDERS_TABLE_TAGS, TABLE_FUNCTIONS, SearchProviders
@@ -136,6 +137,8 @@ _SCHEMA_EXAMPLE_QUERIES = json.dumps(
             "description": "A synthesized one-line answer via free DuckDuckGo Instant Answer.",
             "sql": "SELECT search.main.web_answer('python programming language', 'ddg') AS answer",
         },
+        # Composed examples combining web_search and web_answer (defined once in examples.py).
+        *({"description": e.description, "sql": e.sql} for e in COMPOSED_EXAMPLES),
     ]
 )
 
@@ -199,6 +202,15 @@ _AGENT_TEST_TASKS = json.dumps(
             "prompt": (
                 "Get a single synthesized one-line answer for 'python programming language' using the "
                 "free DuckDuckGo (ddg) provider, without any API key."
+            ),
+        },
+        {
+            "name": "sqlite-titles-with-definitions",
+            "prompt": (
+                "Using the free DuckDuckGo (ddg) provider, search for 'sqlite' and take the top 6 results. "
+                "For each result's title, look up DuckDuckGo's synthesized answer with web_answer. How many "
+                "of those 6 titles have a non-NULL answer? Save the count as a temporary view named "
+                "sqlite_defined_titles with a single column n (one row)."
             ),
         },
     ]

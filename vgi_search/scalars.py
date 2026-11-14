@@ -25,6 +25,7 @@ from vgi.arguments import ConstParam, Param, Returns, Secret
 from vgi.metadata import FunctionExample
 from vgi.scalar_function import ScalarFunction
 
+from vgi_search.examples import GROUNDED_ANSWER_EXAMPLE
 from vgi_search.meta import example_queries_json, object_tags
 from vgi_search.providers import ProviderError, build_provider
 from vgi_search.secrets import key_from_secret
@@ -73,6 +74,8 @@ _WEB_ANSWER_EXAMPLES = [
         sql="SELECT search.main.web_answer('who maintains duckdb', 'tavily')",
         description="Tavily-synthesized answer (needs a key)",
     ),
+    # Composed: the answer plus web_search's ranked URLs (defined once in examples.py).
+    GROUNDED_ANSWER_EXAMPLE,
 ]
 
 

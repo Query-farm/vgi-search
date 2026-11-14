@@ -32,6 +32,11 @@ SELECT url, snippet FROM hits;  -- ... ORDER BY rerank_score(:q, snippet) DESC L
 -- A free, no-key quick fact (DuckDuckGo Instant Answer — zero-click box).
 SELECT search.web_answer('python programming language', 'ddg');
 
+-- Compose both: the instant answer plus the top-5 result URLs to cite with it.
+SELECT search.web_answer('python programming language', 'ddg') AS answer,
+       list(url ORDER BY rank) AS sources
+FROM search.web_search('python programming language', provider := 'ddg', count := 5);
+
 -- Which providers are available and configured?
 SELECT * FROM search.search_providers() ORDER BY provider;
 ```

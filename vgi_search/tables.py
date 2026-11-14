@@ -48,6 +48,7 @@ from vgi.table_function import (
 from vgi_rpc import ArrowSerializableDataclass
 from vgi_rpc.rpc import OutputCollector
 
+from vgi_search.examples import TOPIC_DEFINITIONS_EXAMPLE
 from vgi_search.meta import example_queries_json, object_tags
 from vgi_search.providers import DEFAULT_PROVIDER, ProviderError, build_provider, provider_info
 from vgi_search.result import Result
@@ -238,6 +239,8 @@ _WEB_SEARCH_EXAMPLES = [
         ),
         description="Top-10 web results via Brave (needs a key)",
     ),
+    # Composed: web_answer over web_search's rows (defined once in examples.py).
+    TOPIC_DEFINITIONS_EXAMPLE,
 ]
 
 _PROVIDERS_FN_EXAMPLES = [

@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from vgi_search.providers.base import BaseProvider
+from vgi_search.providers.base import BaseProvider, ProviderError
 from vgi_search.result import Result
 
 
@@ -40,8 +40,16 @@ class DdgProvider(BaseProvider):
             },
             headers={"Accept": "application/json"},
         )
-        # The IA endpoint serves application/x-javascript; parse leniently.
-        payload: dict[str, Any] = resp.json()
+        # The IA endpoint serves application/x-javascript; parse leniently. When
+        # DuckDuckGo throttles a client it answers with an empty / non-JSON body:
+        # surface that as a clear ProviderError instead of a bare JSON decode error.
+        try:
+            payload: dict[str, Any] = resp.json()
+        except ValueError as exc:
+            raise ProviderError(
+                f"{self.name}: non-JSON response (HTTP {resp.status_code}, {len(resp.content)} bytes); "
+                "DuckDuckGo may be rate-limiting this client"
+            ) from exc
         return payload
 
     def search(

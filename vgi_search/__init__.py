@@ -1,6 +1,6 @@
 """vgi-search: unified web search as DuckDB SQL functions.
 
-Exposes ``web_search(query, provider, count, offset)`` (table function),
+Exposes ``web_search(query, provider, count, page)`` (table function),
 ``web_answer(query, provider)`` (scalar), and ``search_providers()`` (discovery)
 behind one pluggable provider surface (brave / tavily / exa / ddg / searxng, plus
 flagged serpapi / serper). Completes the AI/RAG retrieval stack alongside

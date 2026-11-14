@@ -1,0 +1,40 @@
+# name: test/sql/composed.test
+# description: composed queries — web_answer over web_search rows, and an answer + cited URLs
+# group: [vgi_search]
+#
+# Mirrors the composed catalog examples (vgi_search/examples.py) against the mock
+# DDG fixture: one abstract row + two related topics (Guido van Rossum, CPython).
+# The mock answers every DDG query with the same abstract.
+
+require-env VGI_SEARCH_WORKER
+
+statement ok
+LOAD vgi;
+
+statement ok
+LOAD json;
+
+statement ok
+ATTACH 'search' AS search (TYPE vgi, LOCATION '${VGI_SEARCH_WORKER}');
+
+# Grounded answer: the synthesized answer plus the rank-ordered result URLs.
+query TT
+SELECT search.main.web_answer('python programming language', 'ddg') AS answer,
+       list(url ORDER BY rank) AS sources
+FROM search.main.web_search('python programming language', provider := 'ddg', count := 5);
+----
+Python is a high-level, general-purpose programming language.
+['https://en.wikipedia.org/wiki/Python_(programming_language)', 'https://duckduckgo.com/Guido_van_Rossum', 'https://duckduckgo.com/CPython']
+
+# A scalar over the table function's rows: one answer lookup per related topic.
+query ITT
+SELECT rank, title, search.main.web_answer(title, 'ddg') AS definition
+FROM search.main.web_search('python programming language', provider := 'ddg', count := 6)
+WHERE extra->>'result_kind' = 'related_topic'
+ORDER BY rank;
+----
+2	Guido van Rossum	Python is a high-level, general-purpose programming language.
+3	CPython	Python is a high-level, general-purpose programming language.
+
+statement ok
+DETACH search;
