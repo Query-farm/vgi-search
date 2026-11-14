@@ -221,3 +221,6 @@ Written by [Query.Farm](https://query.farm).
 
 Copyright 2026 Query Farm LLC - https://query.farm
 
+## Notebooks
+
+See the [executed Instant Answer shortlist audit](notebooks/README.md).

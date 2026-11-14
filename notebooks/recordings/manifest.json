@@ -1,0 +1,33 @@
+{
+  "source": "Actual public DuckDuckGo Instant Answer responses, exact bodies; not synthetic and not a general web SERP",
+  "entries": [
+    {
+      "query_id": "python",
+      "query": "Python (programming language)",
+      "method": "GET",
+      "url": "https://api.duckduckgo.com/?q=Python+%28programming+language%29&format=json&no_html=1&no_redirect=1&skip_disambig=0",
+      "filename": "python.json",
+      "sha256": "a618b5b313d50f4243fede971929ac2d59ebbc4e6a4861dfe4a774067ecc734b",
+      "bytes": 14541,
+      "status": 200,
+      "source_date": "Sat, 14 Nov 2026 09:59:17 GMT",
+      "started_utc": "2026-11-14T09:59:16.884757+00:00",
+      "received_utc": "2026-11-14T09:59:17.056394+00:00",
+      "content_type": "application/x-javascript"
+    },
+    {
+      "query_id": "arrow",
+      "query": "Apache Arrow",
+      "method": "GET",
+      "url": "https://api.duckduckgo.com/?q=Apache+Arrow&format=json&no_html=1&no_redirect=1&skip_disambig=0",
+      "filename": "arrow.json",
+      "sha256": "8989bbc56f96fe07a247155a4f3b28c3c94a626c48d5e0fabffe8ec575ee2ead",
+      "bytes": 5049,
+      "status": 200,
+      "source_date": "Sat, 14 Nov 2026 09:59:17 GMT",
+      "started_utc": "2026-11-14T09:59:17.057147+00:00",
+      "received_utc": "2026-11-14T09:59:17.191103+00:00",
+      "content_type": "application/x-javascript"
+    }
+  ]
+}
