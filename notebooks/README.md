@@ -113,3 +113,12 @@ formatting, strict mypy (19 source files), and isolated pydoclint 0.8.7 pass. Th
 source executable metadata gate with vgi-lint-check 2.5.0, fail-on-info and link
 checking disabled, scores 100/100 at L2 with zero findings. Source and root locks
 remain unchanged.
+
+## SQL credential isolation
+
+The notebook creates Haybarn with a fresh temporary `secret_directory` and
+`allow_persistent_secrets=False` before attaching workers. It fully drains and
+checks an empty secret inventory. This example needs no saved SQL credential;
+its explicit public-data or local-fixture configuration remains in effect.
+Cleanup removes the temporary directory after closing the connection.
+Existing user SQL secrets are neither read, modified nor deleted.
