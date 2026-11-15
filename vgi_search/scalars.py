@@ -72,7 +72,7 @@ _WEB_ANSWER_EXAMPLES = [
     ),
     FunctionExample(
         sql="SELECT search.main.web_answer('who maintains duckdb', 'tavily')",
-        description="Tavily-synthesized answer (needs a key)",
+        description="Tavily-synthesized answer; needs a tavily secret and returns NULL without one",
     ),
     # Composed: the answer plus web_search's ranked URLs (defined once in examples.py).
     GROUNDED_ANSWER_EXAMPLE,
