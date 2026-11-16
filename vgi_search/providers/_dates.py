@@ -39,7 +39,7 @@ def parse_published(value: object) -> datetime | None:
     # RFC-1123 / HTTP-date (e.g. "Mon, 02 Jan 2006 15:04:05 GMT").
     try:
         parsed = parsedate_to_datetime(text)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         parsed = None
     if parsed is not None:
         return _to_utc(parsed)

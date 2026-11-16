@@ -95,7 +95,7 @@ class TavilyProvider(BaseProvider):
 def _as_float(value: object) -> float | None:
     try:
         return None if value is None else float(value)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
 
 

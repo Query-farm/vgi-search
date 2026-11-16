@@ -3,7 +3,7 @@ name = "vgi-search"
 version = "0.4.1"
 description = "Unified web search as VGI DuckDB SQL functions, behind one pluggable provider surface (for RAG / retrieval)"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 license = { file = "LICENSE" }
 authors = [{ name = "Query Farm LLC", email = "hello@query.farm" }]
 keywords = [
@@ -79,7 +79,7 @@ markers = [
 
 [tool.ruff]
 line-length = 120
-target-version = "py313"
+target-version = "py314"
 extend-exclude = ["notebooks"]
 
 [tool.ruff.lint]
@@ -113,7 +113,7 @@ skip_checking_raises = true
 allow_init_docstring = true
 
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.14"
 strict = true
 warn_return_any = true
 warn_unused_ignores = true

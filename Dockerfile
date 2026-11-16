@@ -7,7 +7,7 @@
 # state / no /data volume); provider API keys are supplied at query time via a VGI
 # secret (one per keyed provider) or *_API_KEY env vars. DuckDuckGo works key-free.
 # syntax=docker/dockerfile:1
-FROM python:3.13-slim
+FROM python:3.14-slim
 
 ARG VERSION=0.0.0
 ARG GIT_COMMIT=unknown
